@@ -1,0 +1,14 @@
+#pragma once
+#include <functional>
+#include <memory>
+#include <string>
+#include <chrono>
+#include "kd_slam/frame/factor_base.h"
+#include "kd_slam/frame/frame_graph.h"
+#include "kd_slam/icp/tree_aligner_base_.h"
+#include "kd_slam/descriptor/extractor_impl_.h"
+#include "kd_slam/tree/tree_cpu_.h"
+#include "tracker_proc_.h"
+#include "kd_slam/map/map_owner_impl_.h"
+#include "tracker_proc_bits_impl_.h"
+#include "tracker_proc_frame_impl_.h"

@@ -1,0 +1,8 @@
+add_subdirectory(event)
+add_subdirectory(frame)
+add_subdirectory(tree)
+add_subdirectory(utils)
+add_subdirectory(motion_model)
+add_subdirectory(descriptor)
+add_subdirectory(d2)
+add_subdirectory(d3)

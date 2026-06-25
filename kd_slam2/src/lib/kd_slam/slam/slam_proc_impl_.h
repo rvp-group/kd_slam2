@@ -1,0 +1,10 @@
+#pragma once
+#include "../bundler/bundler_proc_impl_.h"
+#include "slam_proc_.h"
+#include "kd_slam/map/frame_match_impl_.h"
+#include "slam_proc_bits_impl_.h"
+#include "slam_proc_frame_impl_.h"
+#include "slam_proc_factor_impl_.h"
+#include "slam_proc_covariance_impl_.h"
+#include "slam_proc_relocalize_impl_.h"
+#include "slam_proc_loops_impl_.h"

@@ -1,0 +1,27 @@
+repositories:
+  srrg_cmake_modules:
+    type: git
+    url: https://gitlab.com/srrg-software/srrg_cmake_modules.git
+    version: ros2
+  srrg2_core:
+    type: git
+    url: https://gitlab.com/srrg-software/srrg2_core.git
+    version: ros2
+  srrg2_solver:
+    type: git
+    url: https://gitlab.com/srrg-software/srrg2_solver.git
+    version: ros2
+  srrg2_qgl_viewport:
+    type: git
+    url: https://gitlab.com/srrg-software/srrg2_qgl_viewport.git
+    version: ros2
+  srrg2_config_visualizer:
+    type: git
+    url: https://gitlab.com/srrg-software/srrg2_config_visualizer.git
+    version: ros2
+  srrg2_configs:
+    type: git
+    url: https://gitlab.com/srrg-software/srrg2_configs.git
+    version: master
+  # kd_slam2_msgs and kd_slam2 are copied from local source (see Dockerfile)
+  # replace with public URLs when the repos go public

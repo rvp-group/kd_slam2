@@ -1,0 +1,15 @@
+add_executable(kd_icp_2d_cuda_test kd_icp_main.cpp)
+target_compile_definitions(kd_icp_2d_cuda_test PRIVATE __USE_CUDA__ _TWO_DIMENSIONS_)
+target_link_libraries(kd_icp_2d_cuda_test kd_io kd_slam_scanner_2d kd_slam_icp_2d)
+
+add_executable(kd_icp_2d_cpu_test kd_icp_main.cpp)
+target_compile_definitions(kd_icp_2d_cpu_test PRIVATE __USE_CPU__ _TWO_DIMENSIONS_)
+target_link_libraries(kd_icp_2d_cpu_test kd_io kd_slam_scanner_2d kd_slam_icp_2d)
+
+add_executable(kd_icp_3d_cuda_test kd_icp_main.cpp)
+target_compile_definitions(kd_icp_3d_cuda_test PRIVATE __USE_CUDA__ _THREE_DIMENSIONS_)
+target_link_libraries(kd_icp_3d_cuda_test kd_io kd_slam_scanner_3d kd_slam_icp_3d)
+
+add_executable(kd_icp_3d_cpu_test kd_icp_main.cpp)
+target_compile_definitions(kd_icp_3d_cpu_test PRIVATE __USE_CPU__ _THREE_DIMENSIONS_)
+target_link_libraries(kd_icp_3d_cpu_test kd_io kd_slam_scanner_3d kd_slam_icp_3d)

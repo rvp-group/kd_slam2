@@ -1,0 +1,24 @@
+bin
+/lib
+build
+*~
+\#*
+.claude/
+claude_chats
+results
+imgui.ini
+# LaTeX generated files
+tex/*.aux
+tex/*.bbl
+tex/*.blg
+tex/*.log
+tex/*.out
+tex/*.toc
+tex/*.lof
+tex/*.lot
+tex/*.fls
+tex/*.fdb_latexmk
+tex/*.synctex.gz
+tex/kd_slam.pdf
+tex/figures/__pycache__/
+tex/figures/*.fig.bak

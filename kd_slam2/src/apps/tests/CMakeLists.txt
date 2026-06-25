@@ -1,0 +1,5 @@
+#add_subdirectory(icp)
+#add_subdirectory(cticp)
+add_subdirectory(jacobians)
+#add_subdirectory(misc)
+#add_subdirectory(descriptors)

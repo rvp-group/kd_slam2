@@ -1,0 +1,140 @@
+digraph kd_slam2_classes {
+  rankdir=TB
+  node [shape=box, fontname="Courier", fontsize=10]
+  edge [fontname="Courier", fontsize=9]
+  nodesep=0.4
+  ranksep=0.7
+
+  // ---------------------------------------------------------------
+  // LAYER 0: Point types
+  // ---------------------------------------------------------------
+  PointType2  [label="Point2f\nPointStamped_<Vector2f>"]
+  PointType3  [label="Point3f\nPointStamped_<Vector3f>"]
+  { rank=same; PointType2; PointType3 }
+
+  // ---------------------------------------------------------------
+  // LAYER 1: Traits
+  // ---------------------------------------------------------------
+  Traits2  [label="Point2fTraits\nDim=2, HasTimestamp=true"]
+  Traits3  [label="Point3fTraits\nDim=3, HasTimestamp=true"]
+  { rank=same; Traits2; Traits3 }
+
+  PointType2 -> Traits2 [label="wraps"]
+  PointType3 -> Traits3 [label="wraps"]
+
+  // ---------------------------------------------------------------
+  // LAYER 2: Nodes
+  // ---------------------------------------------------------------
+  Node2  [label="Node_<Point2fTraits>\n= NodePoint2f"]
+  Node3  [label="Node_<Point3fTraits>\n= NodePoint3f"]
+  { rank=same; Node2; Node3 }
+
+  Traits2 -> Node2 [label="param"]
+  Traits3 -> Node3 [label="param"]
+
+  // ---------------------------------------------------------------
+  // LAYER 3: Trees
+  // ---------------------------------------------------------------
+  TreeBase  [label="Tree_<Node_>\n[abstract]"]
+  TreeCPU   [label="TreeCPU_<Base_>"]
+  TreeCUDA  [label="TreeCUDA_<Base_>"]
+  { rank=same; TreeCPU; TreeBase; TreeCUDA }
+
+  Node2    -> TreeBase [label="Node_ param", style=dashed]
+  Node3    -> TreeBase [label="Node_ param", style=dashed]
+  TreeCPU  -> TreeBase [arrowhead=empty, label="extends"]
+  TreeCUDA -> TreeBase [arrowhead=empty, label="extends"]
+
+  // ---------------------------------------------------------------
+  // LAYER 4: Aligner traits
+  // ---------------------------------------------------------------
+  ICPTraits2   [label="ICP_2D_Traits\nPoseDim=3"]
+  ICPTraits3   [label="ICP_3D_Traits\nPoseDim=6"]
+  CTICPTraits2 [label="CTICP_2D_Traits\nOptDim=6"]
+  CTICPTraits3 [label="CTICP_3D_Traits\nOptDim=12"]
+  { rank=same; ICPTraits2; ICPTraits3; CTICPTraits2; CTICPTraits3 }
+
+  Node2 -> ICPTraits2   [label="param", style=dashed]
+  Node3 -> ICPTraits3   [label="param", style=dashed]
+  ICPTraits2 -> CTICPTraits2 [arrowhead=empty, label="extends"]
+  ICPTraits3 -> CTICPTraits3 [arrowhead=empty, label="extends"]
+
+  // ---------------------------------------------------------------
+  // LAYER 5: Abstract aligners
+  // ---------------------------------------------------------------
+  AlignerBase [label="TreeAlignerBase_<Node_>\n[abstract]"]
+  ICP         [label="ICP_<Traits_>\npose-only"]
+  CTICP       [label="CTICP_<Traits_>\npose + velocity"]
+  { rank=same; AlignerBase; ICP; CTICP }
+
+  ICPTraits2   -> ICP   [label="param", style=dashed]
+  ICPTraits3   -> ICP   [label="param", style=dashed]
+  CTICPTraits2 -> CTICP [label="param", style=dashed]
+  CTICPTraits3 -> CTICP [label="param", style=dashed]
+  ICP   -> AlignerBase  [arrowhead=empty, label="extends"]
+  CTICP -> AlignerBase  [arrowhead=empty, label="extends"]
+
+  // ---------------------------------------------------------------
+  // LAYER 6: Concrete aligners (CPU / CUDA)
+  // ---------------------------------------------------------------
+  ICP_CPU    [label="ICP_CPU_<Base_>\nTreeCPU_"]
+  ICP_CUDA   [label="ICP_CUDA_<Base_>\nTreeCUDA_"]
+  CTICP_CPU  [label="CTICP_CPU_<Base_>\nTreeCPU_"]
+  CTICP_CUDA [label="CTICP_CUDA_<Base_>\nTreeCUDA_"]
+  { rank=same; ICP_CPU; ICP_CUDA; CTICP_CPU; CTICP_CUDA }
+
+  ICP_CPU    -> ICP   [arrowhead=empty, label="extends"]
+  ICP_CUDA   -> ICP   [arrowhead=empty, label="extends"]
+  CTICP_CPU  -> CTICP [arrowhead=empty, label="extends"]
+  CTICP_CUDA -> CTICP [arrowhead=empty, label="extends"]
+
+  // ---------------------------------------------------------------
+  // LAYER 7: Frame
+  // ---------------------------------------------------------------
+  FrameBase [label="FrameBase\nts: double"]
+  FrameTree [label="FrameTree_<Node_>\ntree, topic, imus"]
+  Frame     [label="SLAM_<Node_>::Frame\npose_in_world, velocity\ndescriptor, solver ptrs"]
+  { rank=same; FrameBase; FrameTree; Frame }
+
+  Node2     -> FrameTree [label="param", style=dashed]
+  Node3     -> FrameTree [label="param", style=dashed]
+  FrameBase -> FrameTree [arrowhead=empty, label="extends"]
+  FrameTree -> Frame     [arrowhead=empty, label="extends"]
+
+  // ---------------------------------------------------------------
+  // LAYER 8: SLAM
+  // ---------------------------------------------------------------
+  SLAMGraph  [label="SLAMGraph_<Node_>\nFrame, PGOFactor\nMultiViewICPFactor\nMultiViewCTICPFactor"]
+  SLAMTraits [label="SLAMTraits_<Node_>\n[specialized in d2/, d3/]\nSolverVariable, PGOFactor\nVelocityVar, GravityFactor"]
+  SLAM       [label="SLAM_<Node_>\nextends SLAMGraph_\nextends Runnable\nextends FrameConsumerBase"]
+  { rank=same; SLAMGraph; SLAMTraits; SLAM }
+
+  Node2      -> SLAM      [label="param", style=dashed]
+  Node3      -> SLAM      [label="param", style=dashed]
+  SLAMGraph  -> SLAM      [arrowhead=empty, label="base"]
+  SLAMTraits -> SLAM      [label="types", style=dashed]
+  Frame      -> SLAMGraph [label="nested", style=dashed]
+
+  // ---------------------------------------------------------------
+  // LAYER 9: Solver types (d2 / d3)
+  // ---------------------------------------------------------------
+  Var2D  [label="VariableSE2LeftAD\n(2D pose)"]
+  Var3D  [label="VariableSE3ExpmapLeft\n(3D pose)"]
+  Vel2D  [label="VariableVector3\n(vx vy omega)"]
+  Vel3D  [label="VariableVector6\n(vx vy vz wx wy wz)"]
+  Grav3D [label="GravityPriorFactor\n(3D only)"]
+  { rank=same; Var2D; Var3D; Vel2D; Vel3D; Grav3D }
+
+  Var2D  -> SLAMTraits [label="2D", style=dashed]
+  Var3D  -> SLAMTraits [label="3D", style=dashed]
+  Vel2D  -> SLAMTraits [label="2D", style=dashed]
+  Vel3D  -> SLAMTraits [label="3D", style=dashed]
+  Grav3D -> SLAMTraits [label="3D only", style=dashed]
+
+  // ---------------------------------------------------------------
+  // IMU (side node, anchored to SLAM)
+  // ---------------------------------------------------------------
+  ImuEKF [label="ImuEKF\n18-DOF: R,t,omega,v,bg,ba\npredict / update\ngravity pseudo-meas"]
+
+  ImuEKF -> SLAM [label="plugin (3D only)", style=dashed]
+}

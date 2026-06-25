@@ -1,0 +1,89 @@
+digraph kd_slam2_dataflow {
+  rankdir=TB
+  node [shape=box, fontname="Courier", fontsize=10]
+  edge [fontname="Courier", fontsize=9]
+  nodesep=0.5
+  ranksep=0.6
+
+  // ---------------------------------------------------------------
+  // INPUT
+  // ---------------------------------------------------------------
+  Bag    [label="bag / mcap\n(point cloud + IMU)"]
+  Loader [label="kd_loader / kd_runner"]
+  Bag -> Loader
+
+  // ---------------------------------------------------------------
+  // FRAME TREE PRODUCTION
+  // ---------------------------------------------------------------
+  Scanner [label="KDScanner_<Node_>\nvoxel filter + KD-tree build"]
+  FT      [label="FrameTree_<Node_>\ntree + imus + topic + ts"]
+  Loader -> Scanner [label="raw cloud"]
+  Scanner -> FT [label="produces"]
+
+  // ---------------------------------------------------------------
+  // SLAM CORE
+  // ---------------------------------------------------------------
+  makeFrame  [label="makeFrame()\nextract descriptor"]
+  imuPredict [label="imuPredict()\nEKF predict loop\nreturn dT hint"]
+  applyHint  [label="_pose_in_kf *= dT\n(ICP initial guess)"]
+  ICP        [label="alignFrames()\nICP / CT-ICP"]
+  imuUpdate  [label="imuUpdate(T_delta)\nEKF 6-DOF update"]
+  loopSearch [label="seekLoopsFast()\ndescriptor match\nevery frame"]
+  shouldKF   [label="shouldSwitchKeyframe()\ndist / angle / inliers"]
+  relocalize [label="relocalize()\ndescriptor match + ICP verify"]
+  addKF      [label="addKeyframe()\nnew SLAM node\ngravity prior factor"]
+  optimize   [label="optimize()\nPGO  (srrg2_solver)\nchi2 threshold gate"]
+
+  { rank=same; imuPredict; applyHint }
+  { rank=same; imuUpdate; loopSearch; shouldKF }
+  { rank=same; relocalize; addKF }
+
+  FT         -> makeFrame
+  makeFrame  -> imuPredict
+  imuPredict -> applyHint
+  applyHint  -> ICP
+  ICP        -> imuUpdate
+  ICP        -> loopSearch
+  ICP        -> shouldKF
+  loopSearch -> optimize   [label="loop factor"]
+  shouldKF   -> relocalize [label="yes"]
+  shouldKF   -> optimize   [label="no", style=dashed]
+  relocalize -> addKF      [label="no match"]
+  relocalize -> optimize   [label="match"]
+  addKF      -> optimize
+
+  // ---------------------------------------------------------------
+  // IMU EKF (side path)
+  // ---------------------------------------------------------------
+  EKF    [label="ImuEKF\nR, t, omega, v, bg, ba\nP (18x18)"]
+  GravUp [label="gravity pseudo-meas\n|a_smooth|/|g| gate\nanchors roll/pitch"]
+
+  { rank=same; EKF; ICP }
+
+  imuPredict -> EKF [label="predict(omega,a,dt)"]
+  imuUpdate  -> EKF [label="update(dR,dt,Sigma)"]
+  EKF -> applyHint  [label="dT hint\n(rotation only)"]
+  EKF -> GravUp
+  EKF -> addKF      [label="R.col(2)\ngravity prior\nif isValid()"]
+
+  // ---------------------------------------------------------------
+  // OUTPUT EVENTS
+  // ---------------------------------------------------------------
+  EvOdom  [label="EventOdometry\npose_in_kf, pose_in_world"]
+  EvKF    [label="EventKeyframeAdded\nref, pose_in_world"]
+  EvOpt   [label="EventOptimize\n(after PGO)"]
+
+  { rank=same; EvOdom; EvKF; EvOpt }
+
+  ICP      -> EvOdom
+  addKF    -> EvKF
+  optimize -> EvOpt
+
+  // ---------------------------------------------------------------
+  // CONSUMER
+  // ---------------------------------------------------------------
+  Consumer [label="kd_viewer / ROS2 node", shape=ellipse]
+  EvOdom -> Consumer
+  EvKF   -> Consumer
+  EvOpt  -> Consumer
+}

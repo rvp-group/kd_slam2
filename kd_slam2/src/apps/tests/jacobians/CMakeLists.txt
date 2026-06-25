@@ -1,0 +1,4 @@
+add_executable(motion_jacobian_3d_test motion_jacobian_3d_test.cpp)
+add_executable(motion_jacobian_2d_test motion_jacobian_2d_test.cpp)
+add_executable(pose_error_jacobian_3d_test pose_error_jacobian_3d_test.cpp)
+add_executable(pose_error_jacobian_2d_test pose_error_jacobian_2d_test.cpp)
