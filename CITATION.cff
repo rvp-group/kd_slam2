@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "KD-SLAM: One KD-Tree to deskew them all"
+authors:
+  - family-names: "Grisetti"
+    given-names: "Giorgio"
+    affiliation: "Sapienza University of Rome"
+    email: "grisetti@diag.uniroma1.it"
+version: "2.0"
+date-released: "2026-07-01"
+doi: "10.5281/zenodo.21095944"
+url: "https://github.com/rvp-group/kd_slam2"
+repository-code: "https://github.com/rvp-group/kd_slam2"
+license: "MIT"
+type: software
+keywords:
+  - SLAM
+  - KD-Trees
+  - LiDAR
