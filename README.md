@@ -5,7 +5,7 @@ one KD-Tree to close the loops and in the map bind them.
 
 [paper (PDF)] (https://github.com/rvp-group/kd_slam2/blob/main/paper/kd_slam.pdf)
 
-[Zenodo DOI]  (https://doi.org/10.5281/zenodo.21095944)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21095943.svg)](https://doi.org/10.5281/zenodo.21095943)
 
 [Video]       (https://youtu.be/c-sCCt9hMmI)
 
