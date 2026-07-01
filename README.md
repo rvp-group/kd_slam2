@@ -3,7 +3,7 @@
 One KD-Tree to deskew them all, one KD-Tree to match them,
 one KD-Tree to close the loops and in the map bind them.
 
-Paper: (arXiv link TBD)
+Paper: 
 
 ---
 
@@ -35,7 +35,6 @@ apt install libeigen3-dev libopencv-dev libsuitesparse-dev \
 ```bash
 mkdir -p ~/ws/src
 cd ~/ws/src
-git clone https://github.com/rvp-group/kd_slam2_msgs
 git clone https://github.com/rvp-group/kd_slam2
 ./kd_slam2/scripts/srrg_pull.sh
 ```
