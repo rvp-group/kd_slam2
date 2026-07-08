@@ -1,4 +1,5 @@
 //#include "srrg_boss/serializable.h"
+/*
 #include "kd_slam/descriptor/descriptor_defs.h"
 #include "kd_slam/descriptor/matcher_cuda_impl_.cuh"
 #include "kd_slam/d3/typedefs.h"
@@ -19,3 +20,4 @@ namespace kd_slam {
   // }
 
 } // namespace kd_slam
+*/

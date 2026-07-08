@@ -51,8 +51,8 @@ namespace kd_slam {
                                   const State& s, bool skip_leaves=false) override;
 
     protected:
-      void _buildQuadraticForm() override;
-      void _buildQuadraticFormDual() override;
+      void _buildQuadraticForm(bool stats_mode=false) override;
+      void _buildQuadraticFormDual(bool stats_mode=false) override;
       
     };
 

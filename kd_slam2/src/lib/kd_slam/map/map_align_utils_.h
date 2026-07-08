@@ -11,13 +11,14 @@ namespace kd_slam {
                     FramePtr_& fixed,
                     FramePtr_& moving,
                     const IsometryType_& X0,
-                    KDFactorType type) {
+                    KDFactorType type,
+                    bool stats_mode=false) {
       aligner.setFixed(*fixed->tree);
       aligner.setMoving(*moving->tree);
       aligner.setFixedX(IsometryType_::Identity());
       aligner.setX(X0);
       aligner.setVelocities(moving->velocity);
-      int retval=aligner.compute();
+      int retval=aligner.compute(stats_mode);
       if (aligner.logStream()){
         *aligner.logStream()
           << "SLAM_ALIGN| " << KDFactorTypeStr[type]

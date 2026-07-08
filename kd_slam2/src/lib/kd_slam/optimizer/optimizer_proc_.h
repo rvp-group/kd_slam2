@@ -38,6 +38,8 @@ namespace kd_slam {
       using MultiViewCTICPFactorPtr       = typename MapType::MultiViewCTICPFactorPtr;
       using SolverFactorBridge            = typename MapType::SolverFactorBridge;
       using SolverFactorBridgePtr         = std::shared_ptr<SolverFactorBridge>;
+      using ICPType                       = typename MapType::MultiViewICPFactor::ICP;
+      using CTICPType                     = typename MapType::MultiViewCTICPFactor::CTICP;
       using SolverVelocityPriorFactor     = VelocityPriorFactor_<SolverVelocityVariableType>;
 
       // dependent base members

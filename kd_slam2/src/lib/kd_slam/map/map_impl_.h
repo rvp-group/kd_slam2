@@ -7,16 +7,21 @@ namespace kd_slam {
     bool Map_<Node_>::addFactor(PGOFactorPtr f) {
       FrameGraph::addFactor(f);
       if (! _factor_graph->variable(f->from_ref)
-          || ! _factor_graph->variable(f->to_ref))
+          || ! _factor_graph->variable(f->to_ref)) {
         return false;
-
-      auto pgo = std::make_shared<SolverPGOFactorType>();
-      pgo->setVariableId(0, f->from_ref);
-      pgo->setVariableId(1, f->to_ref);
-      pgo->setMeasurement(f->Z_from_to);
-      pgo->setInformationMatrix(f->omega_from_to);
-      _factor_graph->addFactor(pgo);
-      f->solver_factor = pgo.get();
+      }
+      if (! f->solver_factor) {
+        auto pgo = std::make_shared<SolverPGOFactorType>();
+        pgo->setVariableId(0, f->from_ref);
+        pgo->setVariableId(1, f->to_ref);
+        pgo->setMeasurement(f->Z_from_to);
+        pgo->setInformationMatrix(f->omega_from_to);
+        bool add_result = _factor_graph->addFactor(pgo);
+        if (! add_result)
+          throw std::runtime_error("error in adding pgo factor to solver");
+        f->solver_factor = pgo.get();
+        // cerr << "added factor: " << f->solver_factor << " num_factors: " << _factor_graph->factors().size() << " result: " << add_result << " graphId: " << pgo->graphId() << endl;
+      }
       return true;
     }
     

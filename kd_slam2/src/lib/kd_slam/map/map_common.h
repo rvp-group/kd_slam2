@@ -31,12 +31,14 @@ namespace kd_slam {
     using Scalar = float;
     Scalar ba_range                = 10.f;
     Scalar ba_disable_inlier_ratio = 0.3f;
+    MatchThresholds cure_thresholds             = {100.f, 0.3f, 3.f, -1, -1,  0.f};
   };
 
   struct SLAMParams {
     using Scalar = float;
     MatchThresholds relocalize_thresholds       = {100.f, 0.7f, 0.1f, -1,  5,  1.5f};
     MatchThresholds loop_thresholds             = {100.f, 0.7f, 0.1f, 20, -1,  1.5f};
+    MatchThresholds factor_thresholds           = {100.f, 0.3f, 0.1f, -1,  -1,  0.5f};
     Scalar loop_max_orientation_rad             = (M_PI / 180.f) * 10.f;
     Scalar loop_consensus_max_orientation_rad   = (M_PI / 180.f) * 10.f;
     Scalar loop_consensus_max_translation       = 0.5;
@@ -74,6 +76,7 @@ namespace kd_slam {
     Tracking,
     Relocalized,
     Lost,
+    MapDoctor,
     ICPBundling,
     CTICPBundling,
     Ready
@@ -84,6 +87,7 @@ namespace kd_slam {
     "Tracking",
     "Relocalizing",
     "Lost",
+    "MapDoctor",
     "ICPBundling",
     "CTICPBundling",
     "Ready"

@@ -1,6 +1,7 @@
 #pragma once
 #include "kd_slam/map/frame_match_.h"
-#include "../bundler/bundler_proc_.h"
+#include "../optimizer/optimizer_proc_.h"
+#include "../tracker/tracker_proc_.h"
 #include "gravity_prior_host_.h"
 
 namespace kd_slam {
@@ -41,15 +42,13 @@ namespace kd_slam {
       using typename BaseType::SolverGravityPriorFactorType;
       using typename BaseType::PGOFactor;
       using typename BaseType::PGOFactorPtr;
-      using typename BaseType::MultiViewICPFactor;
-      using typename BaseType::MultiViewICPFactorPtr;
+      using typename BaseType::ICPType;
+      using typename BaseType::CTICPType;
       using typename BaseType::MultiViewCTICPFactor;
       using typename BaseType::MultiViewCTICPFactorPtr;
       using typename BaseType::SolverFactorBridge;
       using typename BaseType::SolverFactorBridgePtr;
       using typename BaseType::SolverVelocityPriorFactor;
-      using typename BaseType::ICPType;
-      using typename BaseType::CTICPType;
       using typename BaseType::EventFrameProcessed;
       using typename BaseType::EventFrameAdded;
       using typename BaseType::EventOdometry;
@@ -114,6 +113,10 @@ namespace kd_slam {
       PARAM(srrg2_core::PropertyFloat, loop_min_inliers_ratio,       "min inlier ratio for loop closure",              0.7f, &_param_changed);
       PARAM(srrg2_core::PropertyFloat, loop_min_score,               "min score for loop closure",                     40.f, &_param_changed);
       PARAM(srrg2_core::PropertyFloat, loop_slack,                   "covariance slack for loop chi2 test",            1.0f, &_param_changed);
+      PARAM(srrg2_core::PropertyFloat, factor_max_chi2,              "max chi2 for factor creation",                  100.f, &_param_changed);
+      PARAM(srrg2_core::PropertyFloat, factor_min_inliers_ratio,     "min inlier ratio for factor creation",           0.3f, &_param_changed);
+      PARAM(srrg2_core::PropertyFloat, factor_min_score,             "min score for factor creation",                  0.1f, &_param_changed);
+      PARAM(srrg2_core::PropertyFloat, factor_slack,                 "covariance slack for factor chi2 test",          0.5f, &_param_changed);
       PARAM(srrg2_core::PropertyFloat, covariance_propagate_trans_cond_diag, "translational condition number diagonal", 0.05f,  &_param_changed);
       PARAM(srrg2_core::PropertyFloat, covariance_propagate_rot_cond_diag,   "rotational condition number diagonal",   0.001f, &_param_changed);
       PARAM(srrg2_core::PropertyConfigurable_<AlignerBase>, local_aligner, "local aligner",        nullptr, &_param_changed);
@@ -124,14 +127,14 @@ namespace kd_slam {
     protected:
       using Match = FrameMatch_<NodeType>;
       void propagateCovarianceAndDistance();
-      void addFactor(PGOFactorPtr f);
+      bool addFactor(PGOFactorPtr f);
       void addKeyframe();
       void filterSpatially(std::unordered_map<int, Match>& candidates,
                            std::vector<int>& allowed_refs,
                            const MatchThresholds& thresholds);
       bool relocalize();
       PGOFactorPtr seekLoops();
-      PGOFactorPtr makeFactor(FramePtr& from, FramePtr& to, KDFactorType ft);
+      PGOFactorPtr makeFactor(FramePtr& from, FramePtr& to, KDFactorType ft, bool force = false);
       PGOFactorPtr makeFactor(const Match& match, KDFactorType ft);
 
       std::shared_ptr<AlignerBase> _local_aligner = nullptr;
@@ -145,7 +148,7 @@ namespace kd_slam {
     };
 
     template <typename Node_>
-    using SLAM_ = SLAMProc_<BundlerProc_<TrackerProc_<MapOwner_<Node_>>>>;
+    using SLAM_ = SLAMProc_<OptimizerProc_<TrackerProc_<MapOwner_<Node_>>>>;
 
   } // namespace slam
 } // namespace kd_slam

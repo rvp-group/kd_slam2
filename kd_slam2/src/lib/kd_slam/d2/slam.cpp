@@ -23,8 +23,7 @@ namespace kd_slam{
   using namespace srrg2_solver;
   namespace slam {
     template struct BundlerProc_<kd_slam::map::MapOwner_<kd_slam::d2::NodeType>>;
-    template struct BundlerProc_<TrackerProc_<kd_slam::map::MapOwner_<kd_slam::d2::NodeType>>>;
-    template struct SLAMProc_<BundlerProc_<TrackerProc_<kd_slam::map::MapOwner_<kd_slam::d2::NodeType>>>>;
+    template struct SLAMProc_<OptimizerProc_<TrackerProc_<kd_slam::map::MapOwner_<kd_slam::d2::NodeType>>>>;
     template struct Localizer_<kd_slam::d2::NodeType>;
   }
 

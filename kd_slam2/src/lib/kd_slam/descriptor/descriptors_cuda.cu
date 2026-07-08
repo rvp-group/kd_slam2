@@ -1,3 +1,4 @@
+/*
 #include "descriptor_defs.h"
 #include "matcher_cuda_impl_.cuh"
 #include "utils/geometry_2d_.h"
@@ -13,3 +14,4 @@ namespace kd_slam {
 
   }
 } // namespace kd_slam::descriptor
+*/

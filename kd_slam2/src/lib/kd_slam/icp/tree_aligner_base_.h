@@ -52,7 +52,7 @@ namespace kd_slam {
       virtual void setFixed (const TreeBaseType& fixed)  = 0;
       virtual void setMoving(const TreeBaseType& moving) = 0;
 
-      virtual bool oneRound() = 0;
+      virtual bool oneRound(bool stats_mode=false) = 0;
       virtual AlignerType alignerType() const = 0;
       struct FixedEntry {
         Stats stats;
@@ -93,17 +93,18 @@ namespace kd_slam {
       virtual VelocityVectorType velocities() const { return VelocityVectorType::Zero(); }
       virtual void setVelocities(const VelocityVectorType& v ) {}
       virtual void resetMovingState() {}
-      virtual void buildQuadraticForm() = 0;
-      virtual void buildQuadraticForm(FixedEntry& fixed) {}
+      virtual void buildQuadraticForm(bool stats_mode=false) = 0;
+      virtual void buildQuadraticForm(FixedEntry& fixed, bool stats_mode=false) {}
       virtual void saveStartState() = 0;
       
-      int compute() {
+      int compute(bool stats_mode=false) {
         syncParams();
         stats_log.clear();
         stats_log.reserve(param_max_iterations.value());
         saveStartState();
-        for (int i = 0; i < param_max_iterations.value(); ++i) {
-          bool result = oneRound();
+        int max_iter=stats_mode? 1 : param_max_iterations.value();
+        for (int i = 0; i < max_iter; ++i) {
+          bool result = oneRound(stats_mode);
           stats_log.push_back(stats);
           if (!result)
             return -i;

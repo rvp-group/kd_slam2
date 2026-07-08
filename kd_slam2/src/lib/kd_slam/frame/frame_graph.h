@@ -16,6 +16,10 @@ namespace kd_slam {
       bool operator==(const IndexPair& other) const {
         return from_ref==other.from_ref && to_ref==other.to_ref;
       }
+      bool operator<(const IndexPair& other) const {
+        return from_ref<other.from_ref ||
+          (from_ref==other.from_ref && to_ref<=other.to_ref);
+      }
     };
     struct IndexPairHash {
       size_t operator()(const IndexPair& ip) const {

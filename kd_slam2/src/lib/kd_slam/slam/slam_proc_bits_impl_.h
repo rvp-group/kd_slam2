@@ -55,6 +55,11 @@ namespace kd_slam {
                                             param_loop_min_hops.value(),
                                             -1,
                                             param_loop_slack.value()};
+      _slam_params.factor_thresholds     = {param_factor_max_chi2.value(),
+                                            param_factor_min_inliers_ratio.value(),
+                                            param_factor_min_score.value(),
+                                            -1, -1,
+                                            param_factor_slack.value()};
       _slam_params.loop_max_orientation_rad             = param_loop_max_orientation_deg.value() * float(M_PI / 180.);
       _slam_params.loop_consensus_max_orientation_rad   = param_loop_consensus_max_orientation_deg.value() * float(M_PI / 180.);
       _slam_params.loop_consensus_max_translation       = param_loop_consensus_max_translation.value();

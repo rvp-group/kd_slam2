@@ -193,7 +193,8 @@ namespace kd_slam {
                          const QuadraticTermCache& cache,
                          const NodeType* fixed_nodes_ptr,
                          const NodeType& moving_leaf,
-                         const ParamsType& params);
+                         const ParamsType& params,
+                         bool stats_mode=false);
 
       // Like quadraticTerm but also computes J_B_vel via errorAndJacobianVelocityB.
       // Populates all DestViewDual fields in a single pass.
@@ -204,9 +205,10 @@ namespace kd_slam {
                              const QuadraticTermCache& cache,
                              const NodeType* fixed_nodes_ptr,
                              const NodeType& moving_leaf,
-                             const ParamsType& params);
+                             const ParamsType& params,
+                         bool stats_mode=false);
 
-      bool oneRound() override;
+      bool oneRound(bool stats_mode=false) override;
       std::ostream& printStatus(std::ostream& os);
 
       // applies the velocity motion-compensation to all nodes of a target cloud
@@ -232,12 +234,12 @@ namespace kd_slam {
       virtual ~CTICP_() {}
       QuadraticTermCache _cache;
 
-      void buildQuadraticForm() override;
+      void buildQuadraticForm(bool stats_mode=false) override;
 
       // Single-pass dual: populates H, b (standard) + dual B-vel outputs.
-      void buildQuadraticFormDual();
+      void buildQuadraticFormDual(bool stats_mode=false);
 
-      void buildQuadraticForm(FixedEntryBase& fixed) override;
+      void buildQuadraticForm(FixedEntryBase& fixed, bool stats_mode=false) override;
 
     protected:
       void updateCache();
@@ -248,10 +250,10 @@ namespace kd_slam {
         _saved_start_fixed_state=fixed_state;
       }
 
-      virtual void _buildQuadraticForm() = 0;
+      virtual void _buildQuadraticForm(bool stats_mode=false) = 0;
 
       // Single-pass dual: populates H, b (standard) + dual B-vel outputs.
-      virtual void _buildQuadraticFormDual() = 0;
+      virtual void _buildQuadraticFormDual(bool stats_mode=false) = 0;
       FixedEntry _acc_fixed;
       State _saved_start_moving_state;
       State _saved_start_fixed_state;

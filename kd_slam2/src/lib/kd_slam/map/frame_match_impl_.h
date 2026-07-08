@@ -20,8 +20,8 @@ namespace kd_slam {
     template <typename Node_>
     typename FrameMatch_<Node_>::IsometryType
     FrameMatch_<Node_>::poseFromDescriptors( int fixed_canon, int moving_canon) const {
-      IsometryType p_fixed  = fixed_frame->descriptor.toPose(*fixed_frame->tree, fixed_canon);
-      IsometryType p_moving = moving_frame->descriptor.toPose(*moving_frame->tree, moving_canon);
+      IsometryType p_fixed  = fixed_frame->descriptor.remap(fixed_canon).toPose();
+      IsometryType p_moving = moving_frame->descriptor.remap(moving_canon).toPose();
       return p_fixed * p_moving.inverse();  // T_{moving_in_fixed}
     }
 
@@ -69,12 +69,10 @@ namespace kd_slam {
     template <typename Node_>
     void FrameMatch_<Node_>::rematch(AlignerBase& aligner,
                                      const Thresholds& th,
-                                     KDFactorType ft) {
-      if (result != MatchOk)
-        return;
-
+                                     KDFactorType ft,
+                                     bool stats_mode) {
       // ICP: keyframe fixed, root_frame moving, pose as initial guess
-      alignFrames(aligner, fixed_frame, moving_frame, pose, ft);
+      alignFrames(aligner, fixed_frame, moving_frame, pose, ft, stats_mode);
 
       stats        = aligner.stats;
       int          num_leaves=std::max(moving_frame->tree->_num_leaves, fixed_frame->tree->_num_leaves);

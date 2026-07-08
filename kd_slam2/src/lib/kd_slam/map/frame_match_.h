@@ -36,13 +36,14 @@ namespace kd_slam {
       friend std::ostream& operator<<(std::ostream& os, const FrameMatch_& m) { return m.print(os); }
 
       void initFromGraph();
-      void initFromDescriptors(int fixed_canon = -1, int moving_canon = -1);
+      void initFromDescriptors(int fixed_canon = 0, int moving_canon = 0);
       IsometryType poseFromGraph() const;
-      IsometryType poseFromDescriptors(int fixed_canon = -1, int moving_canon = -1) const;
+      IsometryType poseFromDescriptors(int fixed_canon = 0, int moving_canon = 0) const;
       void filter(const Thresholds& th, const PoseHessianType& sigma_current = PoseHessianType::Zero());
       void rematch(AlignerBase& aligner,
                    const Thresholds& th,
-                   KDFactorType ft);
+                   KDFactorType ft,
+                   bool stats_mode=false);
     };
 
   } // namespace slam

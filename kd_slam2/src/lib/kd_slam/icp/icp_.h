@@ -128,14 +128,15 @@ namespace kd_slam {
                          const QuadraticTermCache& cache,
                          const NodeType* fixed_nodes_ptr,
                          const NodeType& moving_leaf,
-                         const ParamsType& params);
+                         const ParamsType& params,
+                         bool stats_mode=false);
 
-      void buildQuadraticForm() override;
-      void buildQuadraticForm(FixedEntryBase& fixed) override;
+      void buildQuadraticForm(bool stats_mode=false) override;
+      void buildQuadraticForm(FixedEntryBase& fixed, bool stats_mode=false) override;
       // Non-virtual: delegates to buildQuadraticForm() then fills H_fixed/b_fixed/H_cross
       // using J_B = -J_A symmetry -- no extra workspace needed.
-      void buildQuadraticFormDual();
-      bool oneRound() override;
+      void buildQuadraticFormDual(bool stats_mode=false);
+      bool oneRound(bool stats_mode=false) override;
       std::ostream& printStatus(std::ostream& os);
       virtual ~ICP_();
       void saveStartState() override {
@@ -145,7 +146,7 @@ namespace kd_slam {
       std::string iterationLogHeader() const override;
     protected:
       void updateCache();
-      virtual void _buildQuadraticForm() = 0;
+      virtual void _buildQuadraticForm(bool stats_mode=false) = 0;
       QuadraticTermCache _cache;
       FixedEntry _acc_fixed;
       State _saved_start_moving_state;

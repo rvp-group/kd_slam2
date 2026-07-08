@@ -93,30 +93,34 @@ namespace kd_slam { namespace descriptor {
 
     template <typename Node_, int Size_>
     __CUDA_EXPORT_INLINE__
-    auto
-    Descriptor_<Node_, Size_>::remap(int target_canonization, const MatrixType& root_eigenvectors) const -> ThisType {
-      MatrixType R = applyCanonization(root_eigenvectors, target_canonization).transpose()
-        * applyCanonization(root_eigenvectors, axes_canonization);
+    typename Descriptor_<Node_, Size_>::ThisType
+    Descriptor_<Node_, Size_>::remap(int target_canonization) const {
+      // retrieve the can0 eigenvectors
+      MatrixType R_0=applyCanonization(root_transform.linear(), axes_canonization);
+      MatrixType R_target=applyCanonization(R_0, target_canonization);
+      MatrixType R_remap=R_target.transpose()*root_transform.linear();
       ThisType remapped;
       remapped.axes_canonization = target_canonization;
       remapped.ref = ref;
       for (int i = 0; i < Size; ++i) {
-        remapped.values[i].m = R * values[i].m;
-        remapped.values[i].d = R * values[i].d;
+        remapped.values[i].m = R_remap * values[i].m;
+        remapped.values[i].d = R_remap * values[i].d;
       }
+      remapped.root_transform.linear()=R_target;
+      remapped.root_transform.translation()=root_transform.translation();
       return remapped;
     }
 
 
     template <typename Node_, int Size_>
     typename Descriptor_<Node_, Size_>::QDescriptors
-    Descriptor_<Node_, Size_>::buildQDescriptors(const MatrixType& root_eigenvectors) {
+    Descriptor_<Node_, Size_>::buildQDescriptors() {
       QDescriptors q;
       if (axes_canonization!=0)
         throw std::runtime_error("QDescriptors only from can0");
       q.des[0] = *this;
       for (int c = 1; c < NumAxesCanonizations; ++c)
-        q.des[c] = remap(c, root_eigenvectors);
+        q.des[c] = remap(c);
       return q;
     }
 

@@ -111,7 +111,16 @@ namespace kd_slam {
         _descriptor_matcher->addDescriptor(_keyframe->descriptor, _keyframe->ref());
 
       if (previous_keyframe) {
-        PGOFactorPtr f_ptr = makeFactor(previous_keyframe, _keyframe, Odometry);
+        PGOFactorPtr f_ptr;
+        if (_odom_aligner->alignerType() == AlignerCTICP) {
+        
+          Match m(previous_keyframe, _keyframe);
+          m.initFromGraph();
+          m.rematch(*_local_aligner, _slam_params.factor_thresholds, Odometry);
+          f_ptr = makeFactor(m, Odometry);
+        } else {
+           f_ptr = makeFactor(previous_keyframe, _keyframe, Odometry, true);
+        }
         pushEvent(std::make_shared<EventKeyframeAdded>(_keyframe->ts,
                                                        _keyframe->ref(),
                                                        previous_keyframe->ref(),

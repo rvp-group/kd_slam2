@@ -115,6 +115,8 @@ namespace kd_slam {
 
     template <typename MatcherBase_>
     void MatcherCUDA_<MatcherBase_>::addDescriptor(const DescriptorType& item, int ref) {
+      if (ref!=this->_num_descriptors)
+        throw std::runtime_error("MatcherCUDA_| bookkeeping error on addDescriptoor");
       if (this->_num_descriptors >= _capacity)
         throw std::runtime_error("KDDescriptorMatcherCUDA| capacity exceeded");
       DescriptorType d = item;

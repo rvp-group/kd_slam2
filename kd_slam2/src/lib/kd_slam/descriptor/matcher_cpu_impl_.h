@@ -6,8 +6,10 @@ namespace kd_slam {
   namespace descriptor {
 
     template <typename MatcherBase_>
-    void MatcherCPU_<MatcherBase_>::addDescriptor(const DescriptorType& item, int ref) {
+    void DescriptorDBCPU_<MatcherBase_>::addDescriptor(const DescriptorType& item, int ref) {
       DescriptorType d = item;
+      if (ref!=(int)this->_num_descriptors)
+        throw std::runtime_error("MatcherCPU_| bookkeeping error on addDescriptoor");
       d.ref = ref;
       _stored_descriptors.push_back(d);
       this->_num_descriptors = _stored_descriptors.size();
@@ -15,20 +17,40 @@ namespace kd_slam {
     }
 
     template <typename MatcherBase_>
-    void MatcherCPU_<MatcherBase_>::clear() {
+    void DescriptorDBCPU_<MatcherBase_>::clear() {
       _stored_descriptors.clear();
       this->_num_descriptors = 0;
       this->_descriptors_ptr = nullptr;
     }
 
     template <typename MatcherBase_>
+    void MatcherCPU_<MatcherBase_>::addDescriptor(const DescriptorType& item, int ref) {
+      if (! _descriptor_db) {
+        throw std::runtime_error ("MatcherCPU_| no desc db");
+      }
+      _descriptor_db->addDescriptor(item, ref);
+    }
+
+    template <typename MatcherBase_>
+    void MatcherCPU_<MatcherBase_>::clear() {
+      if (! _descriptor_db) {
+        throw std::runtime_error ("MatcherCPU_| no desc db");
+      }
+      _descriptor_db->clear();
+    }
+
+    template <typename MatcherBase_>
     void MatcherCPU_<MatcherBase_>::match(std::vector<Match>& matches,
                                           const QDescriptors& queries) const {
       this->syncParams();
-      matches.reserve(_stored_descriptors.size());
+      if (! _descriptor_db) {
+        throw std::runtime_error ("MatcherCPU_| no desc db");
+      }
+      auto& stored_descriptors=_descriptor_db->_stored_descriptors;
+      matches.reserve(stored_descriptors.size());
       matches.clear();
-      for (size_t i = 0; i < _stored_descriptors.size(); ++i) {
-        const auto& item = _stored_descriptors[i];
+      for (size_t i = 0; i < stored_descriptors.size(); ++i) {
+        const auto& item = stored_descriptors[i];
         Match best_match{0,0,0,0,-1}; // invalid best match
 
         for(int c=0; c<DescriptorType::NumAxesCanonizations; ++c) {
@@ -57,12 +79,16 @@ namespace kd_slam {
                                           const std::vector<int>& candidates,
                                           const QDescriptors& queries) const {
       this->syncParams();
+      if (! _descriptor_db) {
+        throw std::runtime_error ("MatcherCPU_| no desc db");
+      }
+      auto& stored_descriptors=_descriptor_db->_stored_descriptors;
       matches.reserve(candidates.size());
       matches.clear();
       for (const auto c_idx: candidates) {
-        if (c_idx<0 || c_idx>=(int)_stored_descriptors.size())
+        if (c_idx<0 || c_idx>=(int)stored_descriptors.size())
           continue;
-        const auto& item = _stored_descriptors[c_idx];
+        const auto& item = stored_descriptors[c_idx];
         Match best_match{0,0,0,0,-1}; // invalid best match
 
         for(int c=0; c<DescriptorType::NumAxesCanonizations; ++c) {

@@ -6,36 +6,6 @@ namespace kd_slam {
   namespace slam {
     using namespace kd_slam::frame;
 
-    //
-    template <typename T_>
-    typename SLAMProc_<T_>::PGOFactorPtr
-    SLAMProc_<T_>::makeFactor(FramePtr& from, FramePtr& to, KDFactorType ft) {
-      using namespace std;
-      PGOFactor f;
-      f.from_ref=from->ref();
-      f.to_ref=to->ref();
-      f.type =ft;
-      auto dX=from->pose_in_world.inverse()*to->pose_in_world;
-      int retval = alignFrames(*_local_aligner, from, to, dX, ft);
-      f.stats=_local_aligner->stats;
-      //cerr << "ADDFACTOR, stats: " << f.stats << endl;
-      if (retval<0) {
-        cerr << "makeFactor broke TYPE: " << KDFactorTypeStr[ft] << endl;
-        return nullptr;
-      }
-      f.Z_from_to=_local_aligner->getX();
-      if (!_local_aligner->getX().matrix().allFinite()){
-        cerr << "makeFactor not finite TYPE: " << KDFactorTypeStr[ft] << endl;
-        return nullptr;
-      }
-      f.Z_to_from=f.Z_from_to.inverse();
-      f.omega_from_to=_local_aligner->getPoseHessian();
-      f.omega_to_from = GeometryTraits::transformOmega(f.omega_from_to, f.Z_from_to);
-      f.det_from_to=f.omega_from_to.determinant();
-      f.det_to_from=f.omega_to_from.determinant();
-      return std::make_shared<PGOFactor>(f);
-    }
-
     template <typename T_>
     typename SLAMProc_<T_>::PGOFactorPtr
     SLAMProc_<T_>::makeFactor(const Match& match, KDFactorType ft) {
@@ -65,12 +35,26 @@ namespace kd_slam {
       return std::make_shared<PGOFactor>(f);
     }
 
+    template <typename T_>
+    typename SLAMProc_<T_>::PGOFactorPtr
+    SLAMProc_<T_>::makeFactor(FramePtr& from, FramePtr& to, KDFactorType ft, bool force) {
+      Match m(from, to, from->pose_in_world.inverse()*to->pose_in_world);
+      m.rematch(*_local_aligner, _slam_params.factor_thresholds, ft, true);
+      if (m.result != MatchOk) {
+        if (!force)
+          return nullptr;
+        m.omega = _local_aligner->getPoseHessian();
+      }
+      return makeFactor(m, ft);
+    }
+
+
     
     template <typename T_>
-    void SLAMProc_<T_>::addFactor(PGOFactorPtr f) {
+    bool SLAMProc_<T_>::addFactor(PGOFactorPtr f) {
       bool result = _map->addFactor(f);
       if (! result)
-        return;
+        return result;
       if (_solver) {
         f->solver_factor->compute(true, true);
         _pending_chi2+=f->solver_factor->stats().chi;
@@ -84,6 +68,8 @@ namespace kd_slam {
                                                    f->stats,
                                                    f->type,
                                                    (size_t)f.get()));
+      // std::cerr << "Add Factor, type: " << KDFactorTypeStr[f->type] << " | Omega det: " << f->omega_from_to.inverse().template block<3,3>(0,0).determinant() << endl;
+      return result;
     }
     
 

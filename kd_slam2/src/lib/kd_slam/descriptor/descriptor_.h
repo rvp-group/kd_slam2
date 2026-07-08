@@ -32,7 +32,7 @@ namespace kd_slam {
       static constexpr int Dim=NodeType::Dim;
       static constexpr int Size=Size_;
       static constexpr int NumAxesCanonizations=1<<(Dim-1);
-
+      IsometryType root_transform=IsometryType::Identity();
       using ThisType=Descriptor_<NodeType, Size>;
       struct DescriptorEntry {
         VectorType m;
@@ -52,21 +52,17 @@ namespace kd_slam {
 
       static __CUDA_EXPORT_INLINE__ MatrixType applyCanonization(const MatrixType& src_R, int canonization);
 
-      __CUDA_EXPORT_INLINE__ ThisType remap(int target_canonization, const MatrixType& root_eigenvectors) const;
+      __CUDA_EXPORT_INLINE__ ThisType remap(int target_canonization) const;
 
-      IsometryType toPose(const Tree_<NodeType>& tree, int can=-1) const {
-        IsometryType iso;
-        can = (can==-1) ? axes_canonization: can;
-        iso.translation()=tree.root_mean;
-        iso.linear()=applyCanonization(tree.root_eigenvectors,can);
-        return iso;
+      IsometryType toPose() const {
+        return root_transform;
       }
       
       struct QDescriptors {
         ThisType des[NumAxesCanonizations];
       };
 
-      QDescriptors buildQDescriptors(const MatrixType& root_eigenvectors);
+      QDescriptors buildQDescriptors();
   
     };
 

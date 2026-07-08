@@ -13,7 +13,8 @@ Extractor_<Tree_, Level_>::extract(const Tree_& tree, int canonization) {
   desc.axes_canonization=-1;
   if (canonization>=NumAxesCanonizations)
     return desc;
-  MatrixType Rt=DescriptorType::applyCanonization(tree.root_eigenvectors, canonization).transpose();
+  MatrixType R=DescriptorType::applyCanonization(tree.root_eigenvectors, canonization);
+  MatrixType Rt=R.transpose();
         
   //cerr << "R " << endl << R << endl;
   VectorType t=tree.root_mean;
@@ -33,6 +34,8 @@ Extractor_<Tree_, Level_>::extract(const Tree_& tree, int canonization) {
     desc.values[i].m=Rt*(n._mean-t);
     desc.values[i].d=Rt*n._direction;
   }
+  desc.root_transform.linear()=R;
+  desc.root_transform.translation()=t;
   desc.axes_canonization=canonization;
   return desc;
  

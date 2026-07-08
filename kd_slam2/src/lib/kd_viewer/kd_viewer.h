@@ -23,6 +23,7 @@ namespace kd_slam {
     bool handleKey(int key, int cloudcode, int action, int mods) override;
     std::function<void()> on_bundle;
     std::function<void()> on_ct_bundle;
+    std::function<void()> on_map_doctor;
     std::function<void()> on_map_save;
     std::function<void()> on_add_pose_noise;
     std::function<void()> on_add_vel_noise;

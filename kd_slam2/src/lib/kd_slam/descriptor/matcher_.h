@@ -17,6 +17,17 @@ namespace kd_slam {
       int comp_size=-1;
     };
 
+        // Abstract base
+    template <typename Descriptor_>
+    struct DescriptorDB_ {
+      using DescriptorType = Descriptor_;
+      size_t      _num_descriptors = 0;
+      DescriptorType* _descriptors_ptr = nullptr;
+      size_t getNumDescriptors() const { return _num_descriptors; }
+      virtual void addDescriptor(const DescriptorType& item, int ref) = 0;
+      virtual void clear() = 0;
+    };
+      
     // Abstract base
     template <typename Descriptor_>
     struct Matcher_ : public srrg2_core::Configurable {
@@ -39,6 +50,9 @@ namespace kd_slam {
         _params_changed = false;
       }
 
+      virtual void addDescriptor(const DescriptorType& item, int ref) = 0;
+      virtual void clear() = 0;
+
       struct Match {
         size_t q_ref;
         size_t ref_match;
@@ -48,12 +62,6 @@ namespace kd_slam {
       };
 
       mutable Params params;
-      size_t      _num_descriptors = 0;
-      DescriptorType* _descriptors_ptr = nullptr;
-
-      size_t getNumDescriptors() const { return _num_descriptors; }
-      virtual void addDescriptor(const DescriptorType& item, int ref) = 0;
-      virtual void clear() = 0;
 
       using QDescriptors = typename DescriptorType::QDescriptors;
 

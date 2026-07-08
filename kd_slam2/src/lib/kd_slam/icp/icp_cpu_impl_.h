@@ -25,7 +25,7 @@ namespace kd_slam {
 
 
     template <typename Base_>
-    void ICP_CPU_<Base_>::_buildQuadraticForm() {
+    void ICP_CPU_<Base_>::_buildQuadraticForm(bool stats_mode) {
       static constexpr int MAX_THREADS=8;
       struct BQFReturn {
         HessianType H;
@@ -54,7 +54,7 @@ namespace kd_slam {
         for (size_t i=i_min; i<i_max; ++i) {
           const auto& moving_leaf=this->_moving->_nodes_ptr[this->_moving->_leaves_indices_ptr[i]];
           Base::quadraticTerm(view, 0, this->fixed_state, this->moving_state, this->_cache,
-                              this->_fixed->_nodes_ptr, moving_leaf, this->params);
+                              this->_fixed->_nodes_ptr, moving_leaf, this->params, stats_mode);
           stats_adder.add(stats_buf);
           diag_pose_adder.add(diag_pose_buf);
         }

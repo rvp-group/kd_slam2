@@ -74,8 +74,8 @@ static int run(PropertyContainerManager& manager,
   runner.setup(proc, ev_sink_type, a_output_tum.isSet() ? a_output_tum.value() : "");
 
   if (runner.viewer) {
-    runner.viewer->on_bundle    = [&]() { proc->bundle(); };
-    runner.viewer->on_ct_bundle = [&]() { proc->bundleCT(); };
+    //runner.viewer->on_bundle    = [&]() { proc->bundle(); };
+    //runner.viewer->on_ct_bundle = [&]() { proc->bundleCT(); };
     runner.viewer->on_map_save  = runner.on_map_save;
   }
   

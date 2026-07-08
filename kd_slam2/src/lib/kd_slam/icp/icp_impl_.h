@@ -21,19 +21,19 @@ namespace kd_slam {
     }
 
     template <typename Traits_>
-    void ICP_<Traits_>::buildQuadraticForm() {
+    void ICP_<Traits_>::buildQuadraticForm(bool stats_mode) {
       updateCache();
-      _buildQuadraticForm();
+      _buildQuadraticForm(stats_mode);
     }
 
     
     template <typename Base_>
-    void ICP_<Base_>::buildQuadraticForm(FixedEntryBase& fixed_) {
+    void ICP_<Base_>::buildQuadraticForm(FixedEntryBase& fixed_, bool stats_mode) {
       FixedEntry& fixed=static_cast<FixedEntry&>(fixed_);
       this->_fixed=fixed.fixed_tree;
       fixed_state=fixed.fixed_state;
       updateCache();
-      _buildQuadraticForm();
+      _buildQuadraticForm(stats_mode);
       fixed.stats=this->stats;
       fixed.H=H;
       fixed.b=b;
@@ -41,8 +41,8 @@ namespace kd_slam {
 
     
     template <typename Traits_>
-    void ICP_<Traits_>::buildQuadraticFormDual() {
-      buildQuadraticForm();
+    void ICP_<Traits_>::buildQuadraticFormDual(bool stats_mode) {
+      buildQuadraticForm(stats_mode);
       // J_B = -J_A  =>  H_BB = H_AA, b_B = -b_A, J_A^T J_B = -H_AA
       H_fixed =  H;
       b_fixed = -b;
@@ -50,17 +50,17 @@ namespace kd_slam {
     }
 
     template <typename Traits_>
-    bool ICP_<Traits_>::oneRound() {
+    bool ICP_<Traits_>::oneRound(bool stats_mode) {
       using namespace std;
       if (_fixed_forest.empty()) {
-        buildQuadraticForm();
+        buildQuadraticForm(stats_mode);
       } else {
         HessianType temp_H=HessianType::Zero();
         CoefficientType temp_b=CoefficientType::Zero();
         StatsType temp_stats=StatsType::Zero();
         for(auto [ref, e]: _fixed_forest) {
           FixedEntry& entry = static_cast<FixedEntry&>(*e);
-          buildQuadraticForm(entry);
+          buildQuadraticForm(entry, stats_mode);
           temp_H+=entry.H;
           temp_b+=entry.b;
           temp_stats+=entry.stats;
@@ -78,9 +78,13 @@ namespace kd_slam {
         //cerr << "good: " << good_measurements << endl;
         return false;
       }
-      // apply perturbation
+      
       dx=(H+HessianType::Identity()*this->params.damping).ldlt().solve(- b);
       this->stats.pert_pose_norm=dx.norm();
+      if (stats_mode)
+        return true;
+
+      // apply perturbation
       moving_state.X=Traits::expmap(dx)*moving_state.X;
       return true;
     }
@@ -103,7 +107,8 @@ namespace kd_slam {
                                       const ICP_<Traits_>::QuadraticTermCache& cache,
                                       const ICP_<Traits_>::NodeType* fixed_nodes_ptr,
                                       const ICP_<Traits_>::NodeType& moving_leaf,
-                                      const ICP_<Traits_>::ParamsType& params) {
+                                      const ICP_<Traits_>::ParamsType& params,
+                                      bool stats_mode) {
       dest.clear(tid);
       const auto p_mif=applyIsometry_(cache.Xmf, moving_leaf._mean);
       //const auto n_mif=applyRotation_ (cache.Xmf, moving_leaf._direction);
@@ -135,10 +140,10 @@ namespace kd_slam {
       }
 
       Scalar chi2=e*e;
-      Scalar gamma=1;
+      Scalar gamma = 1;
       if (chi2>params.kernel_threshold) {
         dest.stats[tid].num_outliers=1;
-        gamma=sqrt(params.kernel_threshold/chi2);
+        gamma = stats_mode ? 0.f : sqrt(params.kernel_threshold/chi2);
       } else {
         dest.stats[tid].num_inliers=1;
       }

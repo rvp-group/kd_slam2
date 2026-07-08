@@ -1,8 +1,8 @@
 
 add_executable(kd_descriptors_3d_test kd_descriptors_main.cpp)
 target_compile_definitions(kd_descriptors_3d_test PRIVATE _THREE_DIMENSIONS_)
-target_link_libraries(kd_descriptors_3d_test kd_slam_scanner_3d kd_slam_icp_3d kd_app_common)
+target_link_libraries(kd_descriptors_3d_test kd_slam_scanner_3d kd_slam_icp_3d)
 
 add_executable(kd_descriptors_2d_test kd_descriptors_main.cpp)
 target_compile_definitions(kd_descriptors_2d_test PRIVATE _TWO_DIMENSIONS_)
-target_link_libraries(kd_descriptors_2d_test kd_slam_scanner_2d kd_slam_icp_2d kd_app_common)
+target_link_libraries(kd_descriptors_2d_test kd_slam_scanner_2d kd_slam_icp_2d)

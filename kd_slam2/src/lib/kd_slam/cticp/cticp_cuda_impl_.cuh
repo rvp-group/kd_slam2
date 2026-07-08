@@ -148,19 +148,20 @@ namespace kd_slam {
                         const typename CTICP_BaseType_::State fixed_state,
                         const typename CTICP_BaseType_::State moving_state,
                         const typename CTICP_BaseType_::QuadraticTermCache cache,
-                        const typename CTICP_BaseType_::ParamsType params) {
+                        const typename CTICP_BaseType_::ParamsType params,
+                        bool stats_mode) {
       int tid = threadIdx.x + blockIdx.x * blockDim.x;
       if (fixed_num_nodes <= 0)          return;
       if (tid >= moving_num_leaves) return;
       int leaf_idx = moving_leaves_indices_ptr[tid];
       const typename CTICP_BaseType_::NodeType& moving_leaf = moving_nodes_ptr[leaf_idx];
       CTICP_BaseType_::quadraticTerm(ws, tid, fixed_state, moving_state, cache,
-                                     fixed_nodes_ptr, moving_leaf, params);
+                                     fixed_nodes_ptr, moving_leaf, params, stats_mode);
     }
 
     // ---- buildQuadraticForm ----------------------------------------------------
     template <typename CTICP_BaseType_>
-    void CTICP_CUDA_<CTICP_BaseType_>::_buildQuadraticForm() {
+    void CTICP_CUDA_<CTICP_BaseType_>::_buildQuadraticForm(bool stats_mode) {
       using StatsType    = typename CTICP_BaseType_::StatsType;
       using DiagPoseType = typename CTICP_BaseType_::DiagPoseType;
       using DiagVelType  = typename CTICP_BaseType_::DiagVelType;
@@ -184,7 +185,8 @@ namespace kd_slam {
                                                              this->fixed_state,
                                                              this->moving_state,
                                                              this->_cache,
-                                                             this->params);
+                                                             this->params,
+                                                             stats_mode);
       // reduces run on the same stream: ordered after Jacobian kernel automatically;
       // the cudaMemcpy(D2H) inside the last reduce is the effective sync point
       //  CUDA_CHECK(cudaDeviceSynchronize());
@@ -234,19 +236,20 @@ namespace kd_slam {
                              const typename CTICP_BaseType_::State fixed_state,
                              const typename CTICP_BaseType_::State moving_state,
                              const typename CTICP_BaseType_::QuadraticTermCache cache,
-                             const typename CTICP_BaseType_::ParamsType params) {
+                             const typename CTICP_BaseType_::ParamsType params,
+                        bool stats_mode) {
       int tid = threadIdx.x + blockIdx.x * blockDim.x;
       if (fixed_num_nodes <= 0)          return;
       if (tid >= moving_num_leaves) return;
       int leaf_idx = moving_leaves_indices_ptr[tid];
       const typename CTICP_BaseType_::NodeType& moving_leaf = moving_nodes_ptr[leaf_idx];
       CTICP_BaseType_::quadraticTermDual(ws, tid, fixed_state, moving_state, cache,
-                                         fixed_nodes_ptr, moving_leaf, params);
+                                         fixed_nodes_ptr, moving_leaf, params, stats_mode);
     }
 
     // ---- buildQuadraticFormDual ------------------------------------------------
     template <typename CTICP_BaseType_>
-    void CTICP_CUDA_<CTICP_BaseType_>::_buildQuadraticFormDual() {
+    void CTICP_CUDA_<CTICP_BaseType_>::_buildQuadraticFormDual(bool stats_mode) {
       using StatsType         = typename CTICP_BaseType_::StatsType;
       using DiagPoseType      = typename CTICP_BaseType_::DiagPoseType;
       using DiagVelType       = typename CTICP_BaseType_::DiagVelType;
@@ -273,7 +276,8 @@ namespace kd_slam {
                                                                   this->fixed_state,
                                                                   this->moving_state,
                                                                   this->_cache,
-                                                                  this->params);
+                                                                  this->params,
+                                                             stats_mode);
 
       _workspace->_stats_adder.template             reduceDeferred<OpSum<StatsType>>         (_workspace->_stats,            n);
       _workspace->_diag_pose_adder.template         reduceDeferred<OpSum<DiagPoseType>>      (_workspace->_diag_pose,        n);

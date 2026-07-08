@@ -51,7 +51,10 @@ namespace kd_slam {
       using EventOdometry       = EventOdometry_<Node_>;
       using EventVelocity       = EventVelocity_<Node_>;
 
-      virtual void setMap(std::shared_ptr<MapType> m) { _map=m; }
+      virtual void setMap(std::shared_ptr<MapType> m) {
+        cerr << "map set!" << endl;
+        _map=m;
+      }
       std::shared_ptr<MapType> map() {return _map;}
       KDStatus status()      const { return _status; }
       virtual double currentStamp() const {return 0;}

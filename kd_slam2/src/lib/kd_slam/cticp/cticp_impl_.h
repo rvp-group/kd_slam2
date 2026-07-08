@@ -20,18 +20,18 @@ namespace kd_slam {
     }
 
     template <typename Traits_>
-    void CTICP_<Traits_>::buildQuadraticForm() {
+    void CTICP_<Traits_>::buildQuadraticForm(bool stats_mode) {
       updateCache();
-      _buildQuadraticForm();
+      _buildQuadraticForm(stats_mode);
     }
 
     template <typename Base_>
-    void CTICP_<Base_>::buildQuadraticForm(FixedEntryBase& fixed_) {
+    void CTICP_<Base_>::buildQuadraticForm(FixedEntryBase& fixed_, bool stats_mode) {
       FixedEntry& fixed=static_cast<FixedEntry&>(fixed_);
       this->_fixed=fixed.fixed_tree;
       fixed_state=fixed.fixed_state;
       updateCache();
-      _buildQuadraticForm();
+      _buildQuadraticForm(stats_mode);
       fixed.stats=this->stats;
       fixed.H=H;
       fixed.b=b;
@@ -39,23 +39,23 @@ namespace kd_slam {
 
 
     template <typename Traits_>
-    void CTICP_<Traits_>::buildQuadraticFormDual() {
+    void CTICP_<Traits_>::buildQuadraticFormDual(bool stats_mode) {
       updateCache();
-      _buildQuadraticFormDual();
+      _buildQuadraticFormDual(stats_mode);
     }
 
     template <typename Traits_>
-    bool CTICP_<Traits_>::oneRound() {
+    bool CTICP_<Traits_>::oneRound(bool stats_mode) {
       using namespace std;
       if (_fixed_forest.empty()) {
-        buildQuadraticForm();
+        buildQuadraticForm(stats_mode);
       } else {
         HessianType temp_H=HessianType::Zero();
         CoefficientType temp_b=CoefficientType::Zero();
         StatsType temp_stats=StatsType::Zero();
         for(auto [ref, e]: _fixed_forest) {
           FixedEntry& entry = static_cast<FixedEntry&>(*e);
-          buildQuadraticForm(entry);
+          buildQuadraticForm(entry, stats_mode);
           temp_H+=entry.H;
           temp_b+=entry.b;
           temp_stats+=entry.stats;
@@ -82,9 +82,11 @@ namespace kd_slam {
         damping(k,k)=this->params.velocity_damping;
 
       dx = (H + damping).ldlt().solve(-b);
-      moving_state.X           = Traits::expmap(dx.template head<PerturbationPoseDim>()) * moving_state.X;
       this->stats.pert_pose_norm=dx.template head<PerturbationPoseDim>().norm();
       this->stats.pert_vel_norm=dx.template tail<VelocityDim>().norm();
+      if (stats_mode)
+        return true;
+      moving_state.X           = Traits::expmap(dx.template head<PerturbationPoseDim>()) * moving_state.X;
       moving_state.velocities += dx.template tail<VelocityDim>();
       return true;
     }
@@ -110,7 +112,8 @@ namespace kd_slam {
                                             const typename CTICP_<Traits_>::QuadraticTermCache& cache,
                                             const typename CTICP_<Traits_>::NodeType* fixed_nodes_ptr,
                                             const typename CTICP_<Traits_>::NodeType& moving_leaf,
-                                            const typename CTICP_<Traits_>::ParamsType& params) {
+                                            const typename CTICP_<Traits_>::ParamsType& params,
+                                            bool stats_mode) {
 
         dest.clear(tid);
 
@@ -166,7 +169,7 @@ namespace kd_slam {
         Scalar gamma = 1;
         if (chi2 > params.kernel_threshold) {
           dest.stats[tid].num_outliers = 1;
-          gamma = sqrt(params.kernel_threshold / chi2);
+          gamma = stats_mode ? 0.f : sqrt(params.kernel_threshold/chi2);
         } else {
           dest.stats[tid].num_inliers = 1;
         }
@@ -187,7 +190,8 @@ namespace kd_slam {
                                                 const typename CTICP_<Traits_>::QuadraticTermCache& cache,
                                                 const typename CTICP_<Traits_>::NodeType* fixed_nodes_ptr,
                                                 const typename CTICP_<Traits_>::NodeType& moving_leaf,
-                                                const typename CTICP_<Traits_>::ParamsType& params) {
+                                                const typename CTICP_<Traits_>::ParamsType& params,
+                                            bool stats_mode) {
 
         dest.clear(tid);
 
@@ -235,7 +239,7 @@ namespace kd_slam {
                                            moving_state.velocities, dt_A);
 
         Scalar chi2  = e * e;
-        Scalar gamma = 1;
+        Scalar gamma = stats_mode ? 0 : 1;
         if (chi2 > params.kernel_threshold) {
           dest.stats[tid].num_outliers = 1;
           gamma = sqrt(params.kernel_threshold / chi2);

@@ -50,6 +50,11 @@ namespace kd_slam {
         std::thread([this](){ on_ct_bundle(); }).detach();
       }
       return true;
+    case GLFW_KEY_G:
+      if (on_map_doctor){
+        std::thread([this](){ on_map_doctor(); }).detach();
+      }
+      return true;
     case GLFW_KEY_W:
       if (on_ct_bundle_vel_only) {
         std::thread([this](){ on_ct_bundle_vel_only(); }).detach();

@@ -53,6 +53,7 @@ static int run(PropertyContainerManager& manager,
   if (runner.viewer) {
     runner.viewer->on_bundle         = [&]() { proc->bundle(); };
     runner.viewer->on_ct_bundle      = [&]() { proc->bundleCT(); };
+    runner.viewer->on_map_doctor     = [&]() { proc->cure(); };
     runner.viewer->on_map_save       = runner.on_map_save;
     runner.viewer->on_add_pose_noise = [&]() { proc->addPoseNoise(0.1f, 0.05f); };
     runner.viewer->on_add_vel_noise      = [&]() {

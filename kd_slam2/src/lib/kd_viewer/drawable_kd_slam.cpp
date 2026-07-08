@@ -213,7 +213,7 @@ namespace kd_slam {
       }
 
       if (_rendered_cloud) {
-        setGLPointSize(2);
+        setGLPointSize(5);
         _rendered_cloud->show_cloud  = show_clouds;
         _rendered_cloud->show_camera = show_cameras;
         if (_rendered_cloud->_cloud_vbo) {

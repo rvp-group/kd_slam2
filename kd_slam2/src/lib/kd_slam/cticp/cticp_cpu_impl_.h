@@ -24,7 +24,7 @@ namespace kd_slam {
     }
 
     template <typename Base_>
-    void CTICP_CPU_<Base_>::_buildQuadraticForm() {
+    void CTICP_CPU_<Base_>::_buildQuadraticForm(bool stats_mode) {
       static constexpr int MAX_THREADS=8;
 
       using DestView     = typename Base_::DestView;
@@ -63,7 +63,7 @@ namespace kd_slam {
           const auto& moving_leaf=this->_moving->_nodes_ptr[this->_moving->_leaves_indices_ptr[i]];
           Base_::quadraticTerm(view, 0,
                                this->fixed_state, this->moving_state, this->_cache,
-                               this->_fixed->_nodes_ptr, moving_leaf, this->params);
+                               this->_fixed->_nodes_ptr, moving_leaf, this->params, stats_mode);
           stats_adder.add(stats_buf);
           diag_pose_adder.add(diag_pose_buf);
           diag_vel_adder.add(diag_vel_buf);
@@ -126,7 +126,7 @@ namespace kd_slam {
     }
 
     template <typename Base_>
-    void CTICP_CPU_<Base_>::_buildQuadraticFormDual() {
+    void CTICP_CPU_<Base_>::_buildQuadraticFormDual(bool stats_mode) {
       using DestViewDual      = typename Base_::DestViewDual;
       using StatsType         = typename Base_::StatsType;
       using DiagPoseType      = typename Base_::DiagPoseType;
@@ -166,7 +166,7 @@ namespace kd_slam {
         const auto& moving_leaf=this->_moving->_nodes_ptr[this->_moving->_leaves_indices_ptr[i]];
         Base_::quadraticTermDual(view, 0,
                                  this->fixed_state, this->moving_state, this->_cache,
-                                 this->_fixed->_nodes_ptr, moving_leaf, this->params);
+                                 this->_fixed->_nodes_ptr, moving_leaf, this->params, stats_mode);
         stats_adder.add(stats_buf);
         diag_pose_adder.add(diag_pose_buf);
         diag_vel_adder.add(diag_vel_buf);

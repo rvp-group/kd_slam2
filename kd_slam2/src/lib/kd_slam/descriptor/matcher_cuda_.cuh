@@ -6,6 +6,15 @@
 namespace kd_slam {
   namespace descriptor {
 
+    
+    template <typename Descriptor_>
+    struct DescriptorDBCUDA_ : public DescriptorDB_<Descriptor_>{
+      using DescriptorType  = Descriptor_;
+      virtual void addDescriptor(const DescriptorType& item, int ref);
+      virtual void clear();
+      std::vector<DescriptorType> _stored_descriptors;
+    };
+
     // CUDA concrete matcher -- declarations only.
     // Method bodies + kernel are in kd_descriptors_cuda.cu.
     template <typename MatcherBase_>

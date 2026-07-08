@@ -34,7 +34,7 @@ namespace kd_slam {
       
       // 2nd pass: descriptor matching
       using QDescriptors = typename DescriptorType::QDescriptors;
-      QDescriptors q = _floating_frame->descriptor.buildQDescriptors(_floating_frame->tree->root_eigenvectors);
+      QDescriptors q = _floating_frame->descriptor.buildQDescriptors();
 
 
       using DescMatch = typename DescriptorMatcher::Match;
@@ -57,7 +57,7 @@ namespace kd_slam {
         ++stat_loop_desc2floating;
 
         // chain match_kf->current
-        IsometryType T_desc_mkf_curr=cand.poseFromDescriptors(-1, dm.q_canon); //p_desc_mkf*p_desc_curr.inverse();
+        IsometryType T_desc_mkf_curr=cand.poseFromDescriptors(0, dm.q_canon); //p_desc_mkf*p_desc_curr.inverse();
 
         // chain match_kf ->  current_kf  via descriptors of current
         IsometryType T_desc_mkf_ckf_A = T_desc_mkf_curr * _pose_in_kf.inverse();
@@ -65,12 +65,12 @@ namespace kd_slam {
       // seek between canonizations the chain T_desc_mkf_ckf via descriptors of current keyframe
         // trying all canonizations
         const auto T_desc_ckf_mkf_A=T_desc_mkf_ckf_A.inverse();
-        Match m_mkf_kf(_keyframe, match_kf);
+        Match m_ckf_mkf(_keyframe, match_kf);
         Scalar best_angle = std::numeric_limits<Scalar>::max();
         Scalar best_translation= std::numeric_limits<Scalar>::max();
         for (int c = 0; c < DescriptorType::NumAxesCanonizations; ++c) {
-          IsometryType T_desc_mkf_ckf_cand=m_mkf_kf.poseFromDescriptors(c);
-          IsometryType  T_delta_desc=T_desc_ckf_mkf_A*T_desc_mkf_ckf_cand;
+          IsometryType T_desc_ckf_mkf_cand=m_ckf_mkf.poseFromDescriptors(c);
+          IsometryType  T_delta_desc=T_desc_ckf_mkf_A*T_desc_ckf_mkf_cand;
           Scalar angle_desc = std::abs(GeometryTraits::angleFromRotation(T_delta_desc.linear()));
           Scalar translation_desc=T_delta_desc.translation().norm();
 
@@ -95,14 +95,18 @@ namespace kd_slam {
         Scalar angle_graph = std::abs(GeometryTraits::angleFromRotation(T_desc_mkf_ckf_A.linear().transpose()*cand.pose.linear()));
         if (angle_graph > _slam_params.loop_max_orientation_rad) {
           loop_match.match_result=MatchLoopGraphFail;
-          continue;
         }
+        // icp 1: floating w.r.t match_kf
+        Match float_match(match_kf, _floating_frame, T_desc_mkf_curr);
+        float_match.rematch(aligner, _slam_params.loop_thresholds, KDFactorType::Loop);
+        if (float_match.result!=MatchOk)
+          continue;
+        
 
         // --- single ICP: _keyframe (moving) vs matchKF (fixed) ---
-        Match kf_match(_keyframe, match_kf, T_desc_mkf_ckf_A.inverse());
-        kf_match.result = MatchOk; 
+        Match kf_match(_keyframe, match_kf, _pose_in_kf*float_match.pose.inverse());
         kf_match.desc_distance = dm.dist_match;
-        kf_match.rematch(aligner, _slam_params.loop_thresholds, KDFactorType::Loop);
+        kf_match.rematch(aligner, _slam_params.factor_thresholds, KDFactorType::Loop);
 
         ++stat_loop_ICP_tries;
 
@@ -114,7 +118,7 @@ namespace kd_slam {
         //      << " inlier_t:    " << _slam_params.loop_thresholds.min_inlier_ratio
         //      << " score: " << kf_match.score 
         //      << " score_t: " << _slam_params.loop_thresholds.min_score << endl;
-        if (kf_match.result != MatchOk) {
+        if (kf_match.result != MatchOk) { //TODO use relaxed thresholds and add a further consensus
           continue;
         }
         ++stat_loop_ICP_OK;

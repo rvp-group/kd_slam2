@@ -19,9 +19,5 @@ repositories:
     type: git
     url: https://gitlab.com/srrg-software/srrg2_config_visualizer.git
     version: ros2
-  srrg2_configs:
-    type: git
-    url: https://gitlab.com/srrg-software/srrg2_configs.git
-    version: master
   # kd_slam2_msgs and kd_slam2 are copied from local source (see Dockerfile)
   # replace with public URLs when the repos go public

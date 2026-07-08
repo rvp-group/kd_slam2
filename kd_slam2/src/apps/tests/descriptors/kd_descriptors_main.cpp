@@ -97,16 +97,37 @@ int main(int argc, char** argv) {
 
   static constexpr int DescriptorLevel = 4;
   using DescriptorExtractor = Extractor_<TreeCPUType, DescriptorLevel>;
-  using DescriptorType          = typename DescriptorExtractor::DescriptorType;
+  using DescriptorType      = typename DescriptorExtractor::DescriptorType;
 
   cerr << "Computing descriptors|"
        << " level: " << DescriptorExtractor::Level
        << " size: "  << DescriptorExtractor::Size
        << " canonizations: " << DescriptorExtractor::NumAxesCanonizations << endl;
 
-  DescriptorType fixed_descriptors[DescriptorExtractor::NumAxesCanonizations];
-  for (int can = 0; can < DescriptorExtractor::NumAxesCanonizations; ++can)
-    fixed_descriptors[can] = DescriptorExtractor::extract(fixed_tree_cpu, can);
+  // extract can0 only, build all canonizations via remap
+  DescriptorType fixed_desc0  = DescriptorExtractor::extract(fixed_tree_cpu, 0);
+  auto           fixed_qdesc  = fixed_desc0.buildQDescriptors();
+
+  // consistency check: remap(c).toPose() must match explicit applyCanonization + root_mean
+  cerr << "\n--- remap consistency check (fixed) ---" << endl;
+  bool remap_ok = true;
+  for (int c = 0; c < DescriptorExtractor::NumAxesCanonizations; ++c) {
+    IsometryType from_remap = fixed_qdesc.des[c].toPose();
+    IsometryType from_tree;
+    from_tree.linear()      = DescriptorType::applyCanonization(fixed_tree_cpu.root_eigenvectors, c);
+    from_tree.translation() = fixed_tree_cpu.root_mean;
+    Scalar err = (from_remap.matrix() - from_tree.matrix()).squaredNorm();
+    cerr << "  can " << c << " err: " << err;
+    if (err > Scalar(1e-6)) {
+      cerr << " FAIL";
+      remap_ok = false;
+    }
+    cerr << endl;
+  }
+  if (remap_ok)
+    cerr << "remap consistency: OK" << endl;
+  else
+    cerr << "remap consistency: FAILED -- remap is broken" << endl;
 
   cerr << "build_tree[CPU] (moving)" << endl;
   t_start = getNow();
@@ -120,9 +141,8 @@ int main(int argc, char** argv) {
   cerr << "Time[ms]: " << getDurationMs(t_start) << endl;
   cerr << "good_leaves: " << moving_tree_cpu.countNodes(isGoodLeaf) << endl << endl;
 
-  DescriptorType moving_descriptors[DescriptorExtractor::NumAxesCanonizations];
-  for (int can = 0; can < DescriptorExtractor::NumAxesCanonizations; ++can)
-    moving_descriptors[can] = DescriptorExtractor::extract(moving_tree_cpu, can);
+  DescriptorType moving_desc0 = DescriptorExtractor::extract(moving_tree_cpu, 0);
+  auto           moving_qdesc = moving_desc0.buildQDescriptors();
 
   Scalar ok_threshold = 10;
   std::list<CompareResult> matches;
@@ -131,7 +151,7 @@ int main(int argc, char** argv) {
   for (int f = 0; f < DescriptorExtractor::NumAxesCanonizations; ++f) {
     cerr << "f: " << f << "\t";
     for (int m = 0; m < DescriptorExtractor::NumAxesCanonizations; ++m) {
-      Scalar compval = fixed_descriptors[f].medCompare(moving_descriptors[m], 0);
+      Scalar compval = fixed_qdesc.des[f].medCompare(moving_qdesc.des[m], 0);
       if (compval < ok_threshold)
         matches.push_back({f, m, compval});
       cerr << "m: " << m << " " << compval << "\t";
@@ -140,15 +160,15 @@ int main(int argc, char** argv) {
   }
 
   for (const auto& m : matches) {
-    cerr << "\nmatch| f_can: " << m.f_canon << " m_can: " << m.m_canon << " dist: " << m.distance;
-    IsometryType iso_fixed, iso_moving;
-    iso_fixed.linear()      = DescriptorType::applyCanonization(fixed_tree_cpu.root_eigenvectors,  m.f_canon);
-    iso_fixed.translation() = fixed_tree_cpu.root_mean;
-    iso_moving.linear()      = DescriptorType::applyCanonization(moving_tree_cpu.root_eigenvectors, m.m_canon);
-    iso_moving.translation() = moving_tree_cpu.root_mean;
-    IsometryType guess = iso_fixed * iso_moving.inverse();
-    cerr << " err: " << (X_gt.matrix() - guess.matrix()).squaredNorm();
+    IsometryType p_fixed  = fixed_qdesc.des[m.f_canon].toPose();
+    IsometryType p_moving = moving_qdesc.des[m.m_canon].toPose();
+    IsometryType guess    = p_fixed * p_moving.inverse();
+    cerr << "\nmatch| f_can: " << m.f_canon
+         << " m_can: " << m.m_canon
+         << " dist: " << m.distance
+         << " err: " << (X_gt.matrix() - guess.matrix()).squaredNorm();
   }
+  cerr << endl;
 
   return 0;
 }

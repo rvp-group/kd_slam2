@@ -70,6 +70,7 @@ namespace kd_slam {
         }
       }
     }
+    
     // read keyframe trees from BAG and populate _frame_graph
     using LoaderTraits = KDTreeLoaderTraits_<NodeType_>;
     using TreeDataType = typename LoaderTraits::TreeDataType;

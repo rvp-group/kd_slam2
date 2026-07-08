@@ -42,7 +42,7 @@ struct ICP_CPU_: public Base_ {
   void setFixed(const TreeBaseType& fixed) override;
   
 protected:
-  void _buildQuadraticForm() override;
+  void _buildQuadraticForm(bool stats_mode=false) override;
 
 };
 
