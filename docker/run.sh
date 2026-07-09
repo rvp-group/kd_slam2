@@ -1,45 +1,26 @@
 #!/bin/bash
-# Usage: run.sh [--cuda] [--data <path>] <kd_slam_args...>
-#
-# Examples:
-#   run.sh --data ~/kd_slam kd_slam -c /data/configs/kd_slam_icp_drive.conf -i /data/...
-#   run.sh --cuda --data ~/kd_slam kd_slam -c /data/configs/...
+# Usage: run.sh [--cuda]
+# Starts an interactive kd_slam2 container with X11 and data mounted.
+# Data root: $KD_SLAM_TEST (default: ~/kd_slam), available as /data inside.
+# CUDA: requires CDI setup (sudo bash docker/setup_cdi.sh, once per host).
 
-set -e
-
-CUDA=0
-DATA=""
+TARGET="cpu"
 
 while [[ $# -gt 0 ]]; do
   case $1 in
-    --cuda)  CUDA=1; shift ;;
-    --data)  DATA="$2"; shift 2 ;;
-    *)       break ;;
+    --cuda) TARGET="cuda"; shift ;;
+    *) echo "Unknown option: $1"; exit 1 ;;
   esac
 done
 
-if [ $# -eq 0 ]; then
-  echo "Usage: run.sh [--cuda] [--data <host_path>] <command> [args...]"
-  echo "  --cuda          use the CUDA image (default: CPU)"
-  echo "  --data <path>   mount host path as /data inside the container"
-  exit 1
-fi
+xhost +local:docker 2>/dev/null
 
-IMAGE="kd_slam2:$([ $CUDA -eq 1 ] && echo cuda || echo cpu)"
+CUDA_ARGS=""
+[ "$TARGET" = "cuda" ] && CUDA_ARGS="--device nvidia.com/gpu=all"
 
-GPU_FLAG=""
-[ $CUDA -eq 1 ] && GPU_FLAG="--gpus all"
-
-MOUNT=""
-[ -n "$DATA" ] && MOUNT="-v $(realpath $DATA):/data"
-
-
-DISPLAY_FLAG=""
-[ -n "$DISPLAY" ] && DISPLAY_FLAG="-e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix"
-
-exec docker run --rm --init \
-    $GPU_FLAG \
-    $MOUNT \
-    $DISPLAY_FLAG \
-    $IMAGE \
-    bash -c "source /opt/ros/jazzy/setup.bash && source /ws/install/setup.bash && exec $*"
+exec docker run --rm -it \
+    --network host \
+    $CUDA_ARGS \
+    -e DISPLAY="$DISPLAY" \
+    -v "${KD_SLAM_TEST:-$HOME/kd_slam}:/data" \
+    kd_slam2:$TARGET bash

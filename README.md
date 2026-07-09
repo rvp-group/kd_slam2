@@ -14,14 +14,35 @@ one KD-Tree to close the loops and in the map bind them.
 ## Build (Docker -- easiest)
 
 ```bash
-cd docker
-./build.sh          # CPU image  (Dockerfile)
-./build.sh --cuda   # CUDA image (Dockerfile.cuda)
+docker/build.sh          # CPU image
+docker/build.sh --cuda   # CUDA image
 ```
 
-Produces image `kd_slam2:cpu` or `kd_slam2:cuda`.
-The CUDA image is based on `nvidia/cuda:12.6.0-devel-ubuntu24.04` and requires
-the NVIDIA Container Toolkit on the host.
+Both images are based on `nvidia/cuda:12.6.0-devel-ubuntu24.04`.
+The CPU image runs on any x86 machine.
+The CUDA image requires the NVIDIA Container Toolkit on the host.
+
+**Run**
+
+```bash
+docker/run.sh          # CPU
+docker/run.sh --cuda   # CUDA
+```
+
+Your data (`$KD_SLAM_TEST`) is mounted as `/data` inside the container.
+Results written to `/data` land back on the host.
+`kd_slam_setup.bash` is sourced automatically on startup.
+
+The CUDA variant requires CDI support on the host:
+
+```bash
+# enable CDI in /etc/docker/daemon.json
+{ "features": { "cdi": true } }
+
+# generate CDI spec (once per host, as root)
+sudo bash docker/setup_cdi.sh
+sudo systemctl restart docker
+```
 
 ---
 
@@ -73,7 +94,7 @@ This produces `*_cpu.conf` copies with `ICPCPU3D`/`CTICPCPU3D` in place of the C
 
 | binary | purpose |
 |---|---|
-| `srrg2_config_visualizer` | inspect and edit BOSS `.conf` parameter files |
+| `srrg2_config_visualizer` | visual IDE for BOSS pipelines: load shared libs, browse and instantiate configurables, wire up processing graphs, edit parameters, save configs |
 | `kd_converter` | preprocess a raw bag into a tree bag (run once per sequence) |
 | `kd_slam` | run SLAM on a bag or a tree bag; outputs map, keyframes, and TUM trajectory |
 | `kd_bundler` | load a map, run bundle adjustment, write a refined map |
@@ -85,25 +106,19 @@ Use `-h` to list command line parameters.
 
 ### Config visualizer
 
-`srrg2_config_visualizer` is a GUI tool for inspecting and editing BOSS config
-files (the `.conf` files in `kd_slam2/configs/`).  It needs to know where your
-workspace libraries are installed via `kd_slam2/configs/dl.conf`.
+`srrg2_config_visualizer` (`confviz` alias after sourcing `kd_slam_setup.bash`)
+is a visual IDE for the BOSS/srrg framework. It loads shared libraries at
+runtime (listed in `dl.conf`), discovers all registered configurables, and lets
+you compose processing pipelines graphically: instantiate modules, wire inputs
+to outputs, set parameters, and save the result as a `.conf` file -- without
+touching BOSS JSON by hand. The configs in `kd_slam2/configs/` were built with
+it and can be opened and modified from it.
 
-The `so_paths` entry in `dl.conf` uses the env var `KD_SLAM_ROS_WORKSPACE_INSTALL`,
-set by `scripts/kd_slam_setup.bash` (see Quick start).
-
-The visualizer crawls from the current directory up to the filesystem root
-looking for `dl.conf`. `kd_slam_setup.bash` copies it to `~/dl.conf` automatically
-on first source. Then launch the visualizer:
+After sourcing the setup script, launch it with:
 
 ```bash
-ros2 run srrg2_config_visualizer srrg2_config_visualizer \
-    -c kd_slam2/configs/kd_slam_icp_drive.conf
+confviz -c $KD_SLAM_CONFIGS/kd_slam_icp_drive.conf
 ```
-
-Replace the last argument with whichever config you want to inspect.
-The visualizer lets you browse the full parameter tree, edit values,
-and save back to the file without hand-editing BOSS JSON.
 
 ### Viewer
 

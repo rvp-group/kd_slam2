@@ -30,3 +30,5 @@ if [ -f /.dockerenv ] && [ ! -f /dl.conf ] && [ -f "$KD_SLAM_CONFIGS/dl.conf" ];
   cp "$KD_SLAM_CONFIGS/dl.conf" /dl.conf
   echo "kd_slam_setup: copied dl.conf to /dl.conf (docker)"
 fi
+
+alias confviz='$KD_SLAM_ROS_WORKSPACE_INSTALL/srrg2_config_visualizer/bin/app_node_editor'

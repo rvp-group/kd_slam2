@@ -53,37 +53,18 @@ RUN apt-get update && apt-get install -y \
 # -------------------------------------------------------------------
 FROM base AS cpu
 
+RUN mkdir -p /ws/src
 WORKDIR /ws/src
-RUN git clone -b ros2 https://gitlab.com/srrg-software/srrg_cmake_modules.git && \
-    git clone -b ros2 https://gitlab.com/srrg-software/srrg2_core.git && \
-    git clone -b ros2 https://gitlab.com/srrg-software/srrg2_solver.git && \
-    git clone -b ros2 https://gitlab.com/srrg-software/srrg2_qgl_viewport.git && \
-    git clone -b ros2 https://gitlab.com/srrg-software/srrg2_config_visualizer.git
+RUN git clone https://github.com/rvp-group/kd_slam2.git && \
+    bash kd_slam2/scripts/srrg_pull.sh
 
 WORKDIR /ws
 RUN . /opt/ros/jazzy/setup.sh && \
     colcon build \
-        --cmake-args -DHAVE_CUDA=OFF -DEIGEN3_INCLUDE_DIR=/usr/include/eigen3 \
-        --packages-select \
-            srrg_cmake_modules srrg2_core_msgs srrg2_core srrg2_core_ros \
-            srrg2_qgl_viewport srrg2_solver srrg2_solver_extras
-
-RUN git clone https://github.com/rvp-group/kd_slam2.git /tmp/kd_slam && \
-    mv /tmp/kd_slam/kd_slam2 /ws/src/kd_slam2 && \
-    mv /tmp/kd_slam/kd_slam2_msgs /ws/src/kd_slam2_msgs && \
-    mv /tmp/kd_slam/kd_eval_tools /ws/src/kd_eval_tools && \
-    rm -rf /tmp/kd_slam
-
-RUN bash /ws/src/kd_slam2/kd_slam2/configs/make_cpu_confs.sh
-
-RUN . /opt/ros/jazzy/setup.sh && \
-    . /ws/install/setup.sh && \
-    colcon build \
-        --cmake-args -DHAVE_CUDA=OFF -DEIGEN3_INCLUDE_DIR=/usr/include/eigen3 \
-        --packages-select kd_slam2_msgs kd_slam2 kd_eval_tools
+        --cmake-args -DHAVE_CUDA=OFF -DEIGEN3_INCLUDE_DIR=/usr/include/eigen3
 
 RUN echo "source /opt/ros/jazzy/setup.bash" >> /etc/bash.bashrc && \
-    echo "source /ws/install/setup.bash" >> /etc/bash.bashrc
+    echo "source /ws/src/kd_slam2/scripts/kd_slam_setup.bash" >> /etc/bash.bashrc
 
 WORKDIR /
 
@@ -93,36 +74,18 @@ FROM base AS cuda
 ENV CPATH=/usr/local/cuda/include
 ENV LIBRARY_PATH=/usr/local/cuda/lib64
 
+RUN mkdir -p /ws/src
 WORKDIR /ws/src
-RUN git clone -b ros2 https://gitlab.com/srrg-software/srrg_cmake_modules.git && \
-    git clone -b ros2 https://gitlab.com/srrg-software/srrg2_core.git && \
-    git clone -b ros2 https://gitlab.com/srrg-software/srrg2_solver.git && \
-    git clone -b ros2 https://gitlab.com/srrg-software/srrg2_qgl_viewport.git && \
-    git clone -b ros2 https://gitlab.com/srrg-software/srrg2_config_visualizer.git
+RUN git clone https://github.com/rvp-group/kd_slam2.git && \
+    bash kd_slam2/scripts/srrg_pull.sh
 
 WORKDIR /ws
 RUN . /opt/ros/jazzy/setup.sh && \
     colcon build \
         --cmake-args -DHAVE_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=all-major \
-            -DEIGEN3_INCLUDE_DIR=/usr/include/eigen3 \
-        --packages-select \
-            srrg_cmake_modules srrg2_core_msgs srrg2_core srrg2_core_ros \
-            srrg2_qgl_viewport srrg2_solver srrg2_solver_extras
-
-RUN git clone https://github.com/rvp-group/kd_slam2.git /tmp/kd_slam && \
-    mv /tmp/kd_slam/kd_slam2 /ws/src/kd_slam2 && \
-    mv /tmp/kd_slam/kd_slam2_msgs /ws/src/kd_slam2_msgs && \
-    mv /tmp/kd_slam/kd_eval_tools /ws/src/kd_eval_tools && \
-    rm -rf /tmp/kd_slam
-
-RUN . /opt/ros/jazzy/setup.sh && \
-    . /ws/install/setup.sh && \
-    colcon build \
-        --cmake-args -DHAVE_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=all-major \
-            -DEIGEN3_INCLUDE_DIR=/usr/include/eigen3 \
-        --packages-select kd_slam2_msgs kd_slam2 kd_eval_tools
+            -DEIGEN3_INCLUDE_DIR=/usr/include/eigen3
 
 RUN echo "source /opt/ros/jazzy/setup.bash" >> /etc/bash.bashrc && \
-    echo "source /ws/install/setup.bash" >> /etc/bash.bashrc
+    echo "source /ws/src/kd_slam2/scripts/kd_slam_setup.bash" >> /etc/bash.bashrc
 
 WORKDIR /
