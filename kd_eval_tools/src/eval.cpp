@@ -239,6 +239,8 @@ bool eval(Eigen::Vector2f& dest_ate,
   std::string traj_yz_plot=output_path +"/" + ev_raw_filename+"_traj_yz.pdf";
   std::string traj_xz_plot=output_path +"/" + ev_raw_filename+"_traj_xz.pdf";
 
+  const char* make_plots = getenv("KD_EVAL_MAKE_PLOTS");
+  if (!make_plots) make_plots = "make_plots.gnuplot";  // fallback
   ostringstream gnuplot_command;
   gnuplot_command
     << "gnuplot "
@@ -254,7 +256,7 @@ bool eval(Eigen::Vector2f& dest_ate,
     << "-e \"traj_xy_plot='" << traj_xy_plot << "'\" "
     << "-e \"traj_yz_plot='" << traj_yz_plot << "'\" "
     << "-e \"traj_xz_plot='" << traj_xz_plot << "'\" "
-    << " make_plots.gnuplot ";
+    << make_plots;
   log << "GNUPLOT_COMMAND: " <<   gnuplot_command.str() << endl;
   int result=system(gnuplot_command.str().c_str());
   if (result!=0) {

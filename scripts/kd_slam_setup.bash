@@ -15,6 +15,7 @@ fi
 
 export KD_SLAM_ROS_WORKSPACE_INSTALL=$KD_SLAM_ROS_WORKSPACE/install
 export KD_SLAM_CONFIGS=$KD_SLAM_ROS_WORKSPACE/src/kd_slam2/kd_slam2/configs
+export KD_EVAL_MAKE_PLOTS=$KD_SLAM_ROS_WORKSPACE/src/kd_slam2/kd_eval_tools/src/make_plots.gnuplot
 
 export PATH=$KD_SLAM_ROS_WORKSPACE_INSTALL/kd_slam2/bin:$KD_SLAM_ROS_WORKSPACE_INSTALL/kd_eval_tools/lib/kd_eval_tools:$PATH
 
