@@ -13,11 +13,9 @@
 #include "kd_slam/tree/tree_generator_impl_.h"
 #include "kd_slam/utils/voxelizer_.h"
 #include "kd_slam/utils/voxelizer_impl_.h"
-#ifdef HAVE_CUDA
-#include "kd_slam/tree/tree_cuda_.h"
-#endif
 
 namespace kd_slam {
+
 
   template struct  Node_<Point2fTraits>;
   template struct  Tree_<NodePoint2f>;
@@ -31,6 +29,29 @@ namespace kd_slam {
     template struct Voxelizer_<kd_slam::d2::PointTraits>;
   }
 
+  ToComputeFn_<TreePoint2f> g_tree_toCompute2d =
+    [](std::shared_ptr<TreePoint2f>& t, bool gpu) {
+      return Tree_toCompute_<TreePoint2f>(t, gpu);
+    };
+  
+  template<>
+  std::shared_ptr<TreePoint2f> 
+  Tree_toCompute<TreePoint2f>(std::shared_ptr<TreePoint2f>& t, bool is_gpu) {
+    return g_tree_toCompute2d(t, is_gpu);
+  }
+
+  CopyToFn_<TreePoint2f> g_tree_copyTo2d =
+    [](TreePoint2f& dest, const TreePoint2f& src){
+      Tree_copyTo_<TreePoint2f>(dest, src);
+    };
+
+  template<>
+  void 
+  Tree_copyTo<TreePoint2f>(TreePoint2f& dest, const TreePoint2f& src) {
+    g_tree_copyTo2d(dest, src);
+  }
+
+
   template TreeCPUPoint2f::TreeCPU_<CountLeafPolicyPoint2f>
   (TreeCPUPoint2f::PointsVectorType&, const CountLeafPolicyPoint2f&);
 
@@ -43,7 +64,7 @@ namespace kd_slam {
   using TreeGenerator2D = TreeGenerator_<d2::NodeType>;
   using Voxelizer2D     = utils::Voxelizer_<d2::PointTraits>;
 
-  void kd_slam_registerTreeTypes2D() {
+  void registerTreeTypes2D() {
     BOSS_REGISTER_CLASS(TreeGenerator2D);
     BOSS_REGISTER_CLASS(Voxelizer2D);
   }

@@ -3,6 +3,7 @@
 #include "tree_cuda_.h"
 #include "tree_predicates_.h"
 #include "tree_cpu_.h"
+#include "tree_convert_.h"
 
 namespace kd_slam {
   using namespace kd_slam::cuda;
@@ -10,59 +11,20 @@ namespace kd_slam {
   template<typename KDTreeBase_>
   TreeCUDA_<KDTreeBase_>::TreeCUDA_(const KDTreeBase_& src): 
     KDTreeBase_(src){
-    if(src.isGPU()) {
-      const TreeCUDA_<KDTreeBase_>& cuda_tree=reinterpret_cast<const TreeCUDA_<KDTreeBase_>&>(src);
-      fromCUDA(cuda_tree);
-    } else {
-      const TreeCPU_<KDTreeBase_>& cpu_tree=reinterpret_cast<const TreeCPU_<KDTreeBase_>&>(src);
-      fromCPU(cpu_tree);
-    }
+    Tree_copyTo<KDTreeBase_>(*this, src);
   }
 
   template<typename KDTreeBase_>
-  void TreeCUDA_<KDTreeBase_>::fromCPU(const TreeCPUType& host_src) {
-    _num_nodes=host_src._num_nodes;
-    
-    // allocate the nodes
-    CUDA_CHECK(cudaMalloc((void**)&_nodes_ptr,
-                          sizeof(NodeType)*_num_nodes));
-    
-    CUDA_CHECK(cudaMemcpy(_nodes_ptr,
-                          host_src._nodes_ptr,
-                          sizeof(NodeType)*host_src._num_nodes,
-                          cudaMemcpyHostToDevice));
-    _num_leaves=host_src._num_leaves;
-    _leaves_indices_ptr=0;
-    if (_num_leaves) {
-      CUDA_CHECK(cudaMalloc((void**)&_leaves_indices_ptr,
-                            sizeof(size_t)*_num_leaves));
-      CUDA_CHECK(cudaMemcpy(_leaves_indices_ptr,
-                            host_src._leaves_indices_ptr,
-                            sizeof(size_t)*_num_leaves,
-                            cudaMemcpyHostToDevice));
-    } 
+  TreeCUDA_<KDTreeBase_>::TreeCUDA_(const TreeCUDA_<KDTreeBase_>& src): 
+    KDTreeBase_(src){
+    Tree_CUDAfromCUDA_(*this, src);
   }
-  
 
+  
   template<typename KDTreeBase_>
-  void TreeCUDA_<KDTreeBase_>::fromCUDA(const TreeCUDAType& device_src){
-    _num_nodes=device_src._num_nodes;
-    _num_points=0;
-    _points_ptr=0;
-    CUDA_CHECK(cudaMalloc((void**)&_nodes_ptr, sizeof(NodeType)*device_src._num_nodes));
-    CUDA_CHECK(cudaMemcpy(_nodes_ptr, device_src._nodes_ptr, sizeof(NodeType)*_num_nodes, cudaMemcpyDeviceToDevice));
-
-    _leaves_indices_ptr=0;
-    _num_leaves=device_src._num_leaves;
-    if (_num_leaves) {
-      CUDA_CHECK(cudaMalloc((void**)&_leaves_indices_ptr,
-                            sizeof(size_t)*_num_leaves));
-      CUDA_CHECK(cudaMemcpy(_leaves_indices_ptr,
-                            device_src._leaves_indices_ptr,
-                            sizeof(size_t)*_num_leaves,
-                            cudaMemcpyDeviceToDevice));
-    }
-  
+  __host__ std::shared_ptr<KDTreeBase_> TreeCUDA_<KDTreeBase_>::clone() const {
+    auto tc=new TreeCUDA_<KDTreeBase_>(*this);
+    return std::shared_ptr<KDTreeBase_>(tc);
   }
 
   template<typename KDTreeBase_>
@@ -210,4 +172,133 @@ namespace kd_slam {
     
   }
 
+  template<typename KDTreeBase_>
+  void Tree_CUDAfromCUDA_(TreeCUDA_<KDTreeBase_>& dest, const TreeCUDA_<KDTreeBase_>& device_src){
+    using NodeType=typename KDTreeBase_::NodeType;
+    dest._num_nodes=device_src._num_nodes;
+    dest._num_points=0;
+    dest._points_ptr=0;
+    CUDA_CHECK(cudaMalloc((void**)&dest._nodes_ptr, sizeof(NodeType)*device_src._num_nodes));
+    CUDA_CHECK(cudaMemcpy(dest._nodes_ptr, device_src._nodes_ptr, sizeof(NodeType)*dest._num_nodes, cudaMemcpyDeviceToDevice));
+
+    dest._leaves_indices_ptr=0;
+    dest._num_leaves=device_src._num_leaves;
+    if (dest._num_leaves) {
+      CUDA_CHECK(cudaMalloc((void**)&dest._leaves_indices_ptr,
+                            sizeof(size_t)*dest._num_leaves));
+      CUDA_CHECK(cudaMemcpy(dest._leaves_indices_ptr,
+                            device_src._leaves_indices_ptr,
+                            sizeof(size_t)*dest._num_leaves,
+                            cudaMemcpyDeviceToDevice));
+    }
+  
+  }
+
+  template<typename KDTreeBase_>
+  void Tree_CUDAfromCPU_(TreeCUDA_<KDTreeBase_>& dest, const TreeCPU_<KDTreeBase_>& host_src) {
+    using NodeType=typename KDTreeBase_::NodeType;
+    dest._num_nodes=host_src._num_nodes;
+    dest._num_points=0;
+    dest._points_ptr=0;
+    // allocate the nodes
+    CUDA_CHECK(cudaMalloc((void**)&dest._nodes_ptr,
+                          sizeof(NodeType)*dest._num_nodes));
+    
+    CUDA_CHECK(cudaMemcpy(dest._nodes_ptr,
+                          host_src._nodes_ptr,
+                          sizeof(NodeType)*host_src._num_nodes,
+                          cudaMemcpyHostToDevice));
+    dest._num_leaves=host_src._num_leaves;
+    dest._leaves_indices_ptr=0;
+    if (dest._num_leaves) {
+      CUDA_CHECK(cudaMalloc((void**)&dest._leaves_indices_ptr,
+                            sizeof(size_t)*dest._num_leaves));
+      CUDA_CHECK(cudaMemcpy(dest._leaves_indices_ptr,
+                            host_src._leaves_indices_ptr,
+                            sizeof(size_t)*dest._num_leaves,
+                            cudaMemcpyHostToDevice));
+    } 
+
+  }
+
+
+  template<typename KDTreeBase_>
+  void Tree_CPUfromCUDA_(TreeCPU_<KDTreeBase_>& dest, const TreeCUDA_<KDTreeBase_>& src) {
+    using NodeType=typename KDTreeBase_::NodeType;
+    dest._num_nodes=src._num_nodes;
+    dest._num_leaves=src._num_leaves;
+    dest._num_points=0;
+    dest._points_ptr=0;
+    dest._leaves_indices_ptr=0;
+    dest._nodes_ptr=0;
+    if (dest._num_nodes) {
+      dest._nodes_storage.resize(dest._num_nodes);
+      dest._nodes_ptr=&dest._nodes_storage[0];
+      CUDA_CHECK(cudaMemcpy(dest._nodes_ptr,
+                            src._nodes_ptr,
+                            sizeof(NodeType)*src._num_nodes,
+                            cudaMemcpyDeviceToHost));
+    }
+    if (dest._num_leaves) {
+      dest._leaves_indices_storage.resize(dest._num_leaves);
+      dest._leaves_indices_ptr=&dest._leaves_indices_storage[0];
+      CUDA_CHECK(cudaMemcpy(dest._leaves_indices_ptr,
+                            src._leaves_indices_ptr,
+                            sizeof(size_t)*dest._num_leaves,
+                            cudaMemcpyDeviceToHost));
+    }
+
+  }
+
+  template<typename KDTreeBase_>
+  void Tree_CPUfromCPU_(TreeCPU_<KDTreeBase_>& dest, const TreeCPU_<KDTreeBase_>&src);
+  
+  template<typename KDTreeBase_>
+  void Tree_copyTo_(KDTreeBase_& dest_, const KDTreeBase_& src_) {
+    using namespace kd_slam::cuda;
+    if(dest_.isGPU()&&src_.isGPU()) {
+      TreeCUDA_<KDTreeBase_>& dest=reinterpret_cast<TreeCUDA_<KDTreeBase_>&>(dest_);
+      const TreeCUDA_<KDTreeBase_>& src=reinterpret_cast<const TreeCUDA_<KDTreeBase_>&>(src_);
+      Tree_CUDAfromCUDA_(dest, src);
+      return;
+    }
+    if(dest_.isGPU()&& !src_.isGPU()) {
+      TreeCUDA_<KDTreeBase_>& dest=reinterpret_cast<TreeCUDA_<KDTreeBase_>&>(dest_);
+      const TreeCPU_<KDTreeBase_>& src=reinterpret_cast<const TreeCPU_<KDTreeBase_>&>(src_);
+      Tree_CUDAfromCPU_(dest, src);
+      return;
+    }
+    if(!dest_.isGPU()&& src_.isGPU()) {
+      TreeCPU_<KDTreeBase_>& dest=reinterpret_cast<TreeCPU_<KDTreeBase_>&>(dest_);
+      const TreeCUDA_<KDTreeBase_>& src=reinterpret_cast<const TreeCUDA_<KDTreeBase_>&>(src_);
+      Tree_CPUfromCUDA_(dest, src);
+      return;
+    }
+    if(!dest_.isGPU()&& !src_.isGPU()) {
+      TreeCPU_<KDTreeBase_>& dest=reinterpret_cast<TreeCPU_<KDTreeBase_>&>(dest_);
+      const TreeCPU_<KDTreeBase_>& src=reinterpret_cast<const TreeCPU_<KDTreeBase_>&>(src_);
+      Tree_CPUfromCPU_(dest, src);
+      return;
+    }
+    
+  }
+
+  
+  template <typename KDTreeBase_>
+  std::shared_ptr<KDTreeBase_> Tree_toCompute_(std::shared_ptr<KDTreeBase_>& src,
+                                               bool is_gpu) {
+    if (! src)
+      return nullptr;
+    if (src->isGPU()==is_gpu)
+      return src;
+    KDTreeBase_* ret;
+    if (is_gpu) {
+      ret=new TreeCUDA_<KDTreeBase_>(*src);
+    } else {
+      ret=new TreeCPU_<KDTreeBase_>(*src);
+    }
+    return std::shared_ptr<KDTreeBase_>(ret);
+  }
+  
+  
 } // namespace kd_slam

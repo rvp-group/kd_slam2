@@ -105,9 +105,6 @@ static int run(const std::string& kf_file,
 
 int main(int argc, char** argv) {
   srrg2_core::srrgInit(argc, argv);
-  kd_slam_registerTypes2D();
-  kd_slam_registerTypes3D();
-
   srrg2_core::ParseCommandLine cmd(argv, banner);
   srrg2_core::ArgumentString a_kf  (&cmd, "is", "input-state", "input state file (.kf)",                "");
   srrg2_core::ArgumentString a_map (&cmd, "im", "input-map",   "map prefix (loads <prefix>_map.boss)",  "");

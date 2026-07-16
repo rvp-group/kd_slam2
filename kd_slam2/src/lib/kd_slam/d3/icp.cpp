@@ -12,7 +12,7 @@ namespace kd_slam {
 
   using ICPCPU3D   = d3::ICPCPUType;
 
-  void kd_slam_registerICPCPUTypes3D() {
+  void registerICPCPUTypes3D() {
     BOSS_REGISTER_CLASS(ICPCPU3D);
   }
 

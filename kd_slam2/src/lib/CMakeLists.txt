@@ -6,8 +6,6 @@ add_library(kd_slam_2d_library SHARED
   instances_2d.cpp
 )
 
-set_target_properties(kd_slam_2d_library PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-
 target_link_libraries(kd_slam_2d_library PUBLIC
   ${srrg2_core_LIBRARIES}
   ${srrg2_solver_LIBRARIES}
@@ -27,8 +25,6 @@ add_library(kd_slam_3d_library SHARED
   instances_3d.cpp
 )
 
-set_target_properties(kd_slam_3d_library PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-
 target_link_libraries(kd_slam_3d_library PUBLIC
   ${srrg2_core_LIBRARIES}
   ${srrg2_solver_LIBRARIES}
@@ -43,3 +39,20 @@ target_include_directories(kd_slam_3d_library PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/common>
   $<INSTALL_INTERFACE:include/kd_slam2>
 )
+
+if (HAVE_CUDA) 
+add_library(kd_slam_cuda_init SHARED
+  kd_slam_cuda_init.cu
+)
+
+target_link_libraries(kd_slam_cuda_init PUBLIC
+  cudart
+)
+
+
+target_include_directories(kd_slam_cuda_init PUBLIC
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/lib>
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/common>
+  $<INSTALL_INTERFACE:include/kd_slam2>
+)
+endif()

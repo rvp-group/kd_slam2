@@ -14,7 +14,6 @@
 #include "kd_viewer/kd_viewer.h"
 #include "kd_viewer/drawable_kd_slam_.h"
 #include "kd_slam/slam/slam_proc_.h"
-#include "kd_slam/cuda/cuda_common.h"
 #include "kd_slam/event/event_logger.h"
 #include "kd_io/kd_tum_writer_.h"
 #include "kd_io/kd_state_writer_.h"
@@ -93,9 +92,7 @@ static int run(PropertyContainerManager& manager,
 }
 
 int main(int argc, char** argv) {
-  srrg2_core::srrgInit(argc, argv);
-  kd_slam_registerTypes2D();
-  kd_slam_registerTypes3D();
+  srrgInit(argc, argv);
 
   using namespace std;
   using namespace kd_slam::cuda;

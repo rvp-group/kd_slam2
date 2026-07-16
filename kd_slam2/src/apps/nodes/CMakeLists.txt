@@ -1,8 +1,12 @@
 set(SLAM_LIBS
   kd_viewer
+  -Wl,--no-as-needed      
   kd_slam_3d_library
   kd_slam_2d_library
+  -Wl,--as-needed
 )
+
+
 
 add_executable(kd_slam kd_slam.cpp)
 target_link_libraries(kd_slam ${SLAM_LIBS} )

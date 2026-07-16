@@ -2,7 +2,6 @@
 #include "kd_slam/d2/icp_.h"
 #include "kd_slam/cticp/cticp_.h"
 #include "kd_slam/cticp/cticp_cpu_.h"
-#include "kd_slam/cticp/cticp_cuda_.h"
 #include "utils/geometry_2d_.h"
 #include "utils/geometry_2d_impl_.h"
 
@@ -87,7 +86,6 @@ namespace kd_slam::d2 {
   };
 
   using CTICP_2D_CPU  = CTICP_CPU_<CTICP_<CTICP_2D_Traits>>;
-  using CTICP_2D_CUDA = CTICP_CUDA_<CTICP_<CTICP_2D_Traits>>;
 
 } // namespace kd_slam::d2
 

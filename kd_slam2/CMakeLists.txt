@@ -1,12 +1,21 @@
 cmake_minimum_required(VERSION 3.24)
-option(HAVE_CUDA "Build with cuda support"  ON)
+option(HAVE_CUDA "Build with cuda support" ON)
+
+project(kd_slam2 LANGUAGES C CXX)
 
 if (HAVE_CUDA)
-project(kd_slam2 LANGUAGES C CXX CUDA)
-set(SRRG_ENABLE_CUDA ON)
-else()
-project(kd_slam2 LANGUAGES C CXX)
-set(SRRG_ENABLE_CUDA OFF)
+  find_package(CUDAToolkit QUIET)
+  if (NOT CUDAToolkit_FOUND)
+    message(STATUS "kd_slam2: CUDA toolkit not found, disabling CUDA support")
+    set(HAVE_CUDA OFF CACHE BOOL "" FORCE)
+  else()
+    enable_language(CUDA)
+    set(SRRG_ENABLE_CUDA ON)
+  endif()
+endif()
+
+if (NOT HAVE_CUDA)
+  set(SRRG_ENABLE_CUDA OFF)
 endif()
 
 find_package(ament_cmake REQUIRED)
@@ -22,12 +31,6 @@ find_package(srrg2_solver REQUIRED)
 find_package(kd_slam2_msgs REQUIRED)
 
 set(BUILD_TESTS off)
-
-set(OPT_CUDA_LIBRRIES "")
-if (HAVE_CUDA) 
-   add_compile_definitions(HAVE_CUDA)
-   link_libraries(cudart)
-endif()
 
 message("${PROJECT_NAME} | CXX flags: ${CMAKE_CXX_FLAGS}")
 
@@ -58,6 +61,16 @@ ament_export_libraries(
   kd_slam_utils
   kd_viewer
 )
+
+if (HAVE_CUDA)
+  ament_export_libraries(
+   kd_slam_cuda_init     
+   kd_slam_icp_2d_cuda
+   kd_slam_slam_2d_cuda
+   kd_slam_icp_3d_cuda    
+   kd_slam_slam_3d_cuda
+  )
+endif()
 
 ament_package()
 
@@ -94,3 +107,18 @@ install(
   RUNTIME DESTINATION bin
   INCLUDES DESTINATION kd_slam2/
   )
+
+if (HAVE_CUDA)
+install(
+  TARGETS
+   kd_slam_cuda_init     
+   kd_slam_icp_2d_cuda
+   kd_slam_slam_2d_cuda
+   kd_slam_icp_3d_cuda    
+   kd_slam_slam_3d_cuda
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+  INCLUDES DESTINATION kd_slam2/
+  )
+endif()

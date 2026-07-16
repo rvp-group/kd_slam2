@@ -14,12 +14,7 @@
 #include "kd_slam/utils/voxelizer_.h"
 #include "kd_slam/utils/voxelizer_impl_.h"
 
-#ifdef HAVE_CUDA
-#include "kd_slam/tree/tree_cuda_.h"
-#endif
-
 namespace kd_slam {
-
   template struct  Node_<Point3fTraits>;
   template struct  Tree_<NodePoint3f>;
   template struct  TreeCPU_<TreePoint3f>;
@@ -30,6 +25,31 @@ namespace kd_slam {
   namespace utils {
     template struct Voxelizer_<kd_slam::d3::PointTraits>;
   }
+
+  ToComputeFn_<TreePoint3f> g_tree_toCompute3d =
+    [](std::shared_ptr<TreePoint3f>& t, bool gpu) {
+      return Tree_toCompute_<TreePoint3f>(t, gpu);
+    };
+
+  template<>
+  std::shared_ptr<TreePoint3f> 
+  Tree_toCompute<TreePoint3f>(std::shared_ptr<TreePoint3f>& t, bool is_gpu) {
+    return g_tree_toCompute3d(t, is_gpu);
+  }
+
+  CopyToFn_<TreePoint3f> g_tree_copyTo3d =
+    [](TreePoint3f& dest, const TreePoint3f& src){
+      Tree_copyTo_<TreePoint3f>(dest, src);
+    };
+
+  template<>
+  void 
+  Tree_copyTo<TreePoint3f>(TreePoint3f& dest, const TreePoint3f& src) {
+    g_tree_copyTo3d(dest, src);
+  }
+
+
+
 
   template TreeCPUPoint3f::TreeCPU_<CountLeafPolicyPoint3f>
   (TreeCPUPoint3f::PointsVectorType&, const CountLeafPolicyPoint3f&);
@@ -43,7 +63,7 @@ namespace kd_slam {
   using TreeGenerator3D = TreeGenerator_<d3::NodeType>;
   using Voxelizer3D     = utils::Voxelizer_<d3::PointTraits>;
 
-  void kd_slam_registerTreeTypes3D() {
+  void registerTreeTypes3D() {
     BOSS_REGISTER_CLASS(TreeGenerator3D);
     BOSS_REGISTER_CLASS(Voxelizer3D);
   }

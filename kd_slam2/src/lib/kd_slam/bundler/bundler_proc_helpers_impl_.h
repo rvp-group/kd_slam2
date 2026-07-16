@@ -104,6 +104,7 @@ namespace kd_slam {
       using TrajectoryNode        = kd_slam::Node_<TrajectoryPointTraits>;
       using TrajectoryTree        = TreeCPU_<Tree_<TrajectoryNode>>;
 
+
       std::cerr << "cleaning graph" << std::endl;
       std::unordered_map<IndexPair, bool, IndexPairHash> ba_factors;
       std::list<PGOFactorPtr> pose_factors;

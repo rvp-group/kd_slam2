@@ -24,7 +24,7 @@ namespace kd_slam {
   }
 
   using DescriptorMatcher2D = descriptor::MatcherCPU_<d2::MatcherPoint2f>;
-  void kd_slam_registerDescriptorTypes2D() {
+  void registerDescriptorTypes2D() {
     BOSS_REGISTER_CLASS(DescriptorMatcher2D);
   }
 

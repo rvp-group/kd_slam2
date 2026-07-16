@@ -1,28 +1,27 @@
 #pragma once
 #include "cuda/cuda_common.h"
+#include "tree_convert_.h"
 #include "tree_cpu_.h"
-#ifdef HAVE_CUDA
-#include "tree_cuda_.h"
-#endif
 #include <queue>
 
 namespace kd_slam {
 
   template<typename KDTreeBase_>
+  std::shared_ptr<KDTreeBase_> TreeCPU_<KDTreeBase_>::clone() const  {
+    return std::shared_ptr<KDTreeBase_>(new TreeCPU_<KDTreeBase_>(*this));
+  }
+
+  
+  template<typename KDTreeBase_>
+  TreeCPU_<KDTreeBase_>::TreeCPU_(const TreeCPU_<KDTreeBase_>& src) :
+    KDTreeBase_(src){
+    Tree_CPUfromCPU_(*this, src);
+  }
+
+  template<typename KDTreeBase_>
   TreeCPU_<KDTreeBase_>::TreeCPU_(const KDTreeBase_& src) :
     KDTreeBase_(src){
-
-#ifdef HAVE_CUDA    
-    if(src.isGPU()) {
-      const TreeCUDA_<KDTreeBase_>& cuda_tree=reinterpret_cast<const TreeCUDA_<KDTreeBase_>&>(src);
-      fromCUDA(cuda_tree);
-    } else {
-#endif      
-      const TreeCPU_<KDTreeBase_>& cpu_tree=reinterpret_cast<const TreeCPU_<KDTreeBase_>&>(src);
-      fromCPU(cpu_tree);
-#ifdef HAVE_CUDA    
-    }
-#endif      
+    Tree_copyTo<KDTreeBase_>(*this, src);
   }
 
   template<typename KDTreeBase_>
@@ -45,45 +44,6 @@ namespace kd_slam {
     root_eigenvectors=iso.linear()*root_eigenvectors;
   }
 
-  template<typename KDTreeBase_>
-  void TreeCPU_<KDTreeBase_>::fromCPU(const TreeCPU_<KDTreeBase_>&src)
-  {
-    _points_storage=src._points_storage;
-    _nodes_storage=src._nodes_storage;
-    _points_ptr=_points_storage ? &(*_points_storage)[0] : nullptr;
-    _num_points=_points_storage ? _points_storage->size() : 0;
-    _nodes_ptr=&_nodes_storage[0];
-    recomputeLeaves();
-  }
-
-#ifdef HAVE_CUDA
-  template<typename KDTreeBase_>
-  void TreeCPU_<KDTreeBase_>::fromCUDA(const TreeCUDA_<KDTreeBase_>& src) {
-    using namespace kd_slam::cuda;
-    _num_nodes=src._num_nodes;
-    _num_leaves=src._num_leaves;
-    _num_points=0;
-    _points_ptr=0;
-    _leaves_indices_ptr=0;
-    _nodes_ptr=0;
-    if (_num_nodes) {
-      _nodes_storage.resize(_num_nodes);
-      _nodes_ptr=&_nodes_storage[0];
-      CUDA_CHECK(cudaMemcpy(_nodes_ptr,
-                            src._nodes_ptr,
-                            sizeof(NodeType)*src._num_nodes,
-                            cudaMemcpyDeviceToHost));
-    }
-    if (_num_leaves) {
-      _leaves_indices_storage.resize(_num_leaves);
-      _leaves_indices_ptr=&_leaves_indices_storage[0];
-      CUDA_CHECK(cudaMemcpy(_leaves_indices_ptr,
-                            src._leaves_indices_ptr,
-                            sizeof(size_t)*_num_leaves,
-                            cudaMemcpyDeviceToHost));
-    }
-  }
-#endif
   
   template <typename KDTreeBase_>
   void TreeCPU_<KDTreeBase_>::applyPermutation(const std::vector<int>& permutation) {
@@ -237,6 +197,37 @@ namespace kd_slam {
       if (n.isLeaf() && skip_leaves) continue;
       n = n.applyVelocities(v);
     }
+  }
+
+  template<typename KDTreeBase_>
+  void Tree_CPUfromCPU_(TreeCPU_<KDTreeBase_>& dest, const TreeCPU_<KDTreeBase_>&src)
+  {
+    dest._points_storage=src._points_storage;
+    dest._nodes_storage=src._nodes_storage;
+    dest._points_ptr=dest._points_storage ? &(*dest._points_storage)[0] : nullptr;
+    dest._num_points=dest._points_storage ? dest._points_storage->size() : 0;
+    dest._nodes_ptr=&dest._nodes_storage[0];
+    dest.recomputeLeaves();
+  }
+
+  template<typename KDTreeBase_>
+  void Tree_copyTo_(KDTreeBase_& dest_, const KDTreeBase_& src_) {
+    if (dest_.isGPU() || src_.isGPU()) {
+      throw std::runtime_error("something bad happened with conversion, you are trying to assign a cuda tree to a cpu tree while the cuda library is not linked");
+    }
+    TreeCPU_<KDTreeBase_>& dest=reinterpret_cast<TreeCPU_<KDTreeBase_>&>(dest_);
+    const TreeCPU_<KDTreeBase_>& src=reinterpret_cast<const TreeCPU_<KDTreeBase_>&>(src_);
+    Tree_CPUfromCPU_(dest, src);
+
+  }
+
+  template<typename KDTreeBase_>
+  std::shared_ptr<KDTreeBase_> Tree_toCompute_(std::shared_ptr<KDTreeBase_>& src, bool is_gpu) {
+    if (! src)
+      return nullptr;
+    if (is_gpu || src->isGPU())
+      throw std::runtime_error("cpu only build");
+    return src;
   }
 
 } // namespace kd_slam

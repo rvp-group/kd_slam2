@@ -26,7 +26,6 @@ using namespace std;
 
 namespace kd_slam{
   using namespace srrg2_solver;
-
   namespace slam {
     template struct BundlerProc_<kd_slam::map::MapOwner_<kd_slam::d3::NodeType>>;
     template struct SLAMProc_<OptimizerProc_<TrackerProc_<kd_slam::map::MapOwner_<kd_slam::d3::NodeType>>>>;
@@ -44,7 +43,7 @@ namespace kd_slam{
   template struct slam::IMUMotionModel_<slam::TrackerProc_<map::MapOwner_<d3::NodeType>>>;
   template struct slam::OdometryMotionModel_<slam::TrackerProc_<map::MapOwner_<d3::NodeType>>>;
     
-  void kd_slam_registerSLAMTypes3D() {
+  void registerSLAMTypes3D() {
     using namespace slam;
     solver_registerTypes();
     linear_solver_registerTypes();

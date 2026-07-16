@@ -7,8 +7,12 @@ namespace kd_slam {
   template struct TreeLoader_<d3::NodeType>;
   using TreeLoader3D    = TreeLoader_<d3::NodeType>;
 
-  void __attribute__((constructor)) kd_io_registerTypes3D() {
-    BOSS_REGISTER_CLASS(TreeLoader3D);
-  }
 
 } // namespace kd_slam
+
+namespace kd_io {
+  void __attribute__((constructor)) registerTypes3D() {
+    using namespace kd_slam;
+    BOSS_REGISTER_CLASS(TreeLoader3D);
+  }
+}

@@ -37,7 +37,7 @@ namespace kd_slam{
   template struct slam::ConstVelMotionModel_<slam::TrackerProc_<map::MapOwner_<d2::NodeType>>>;
   template struct slam::IMUMotionModel_<slam::TrackerProc_<map::MapOwner_<d2::NodeType>>>;
 
-  void kd_slam_registerSLAMTypes2D() {
+  void registerSLAMTypes2D() {
     using namespace slam;
     solver_registerTypes();
     linear_solver_registerTypes();

@@ -2,7 +2,6 @@
 #include "kd_slam/d3/icp_.h"
 #include "kd_slam/cticp/cticp_.h"
 #include "kd_slam/cticp/cticp_cpu_.h"
-#include "kd_slam/cticp/cticp_cuda_.h"
 
 
 namespace kd_slam::d3 {
@@ -68,8 +67,6 @@ namespace kd_slam::d3 {
 
 
   using CTICP_3D_CPU  = CTICP_CPU_<CTICP_<CTICP_3D_Traits>>;
-  using CTICP_3D_CUDA = CTICP_CUDA_<CTICP_<CTICP_3D_Traits>>;
-
 } // namespace kd_slam::d3
 
 

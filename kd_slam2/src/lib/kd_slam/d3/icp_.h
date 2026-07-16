@@ -5,7 +5,6 @@
 #include "kd_slam/tree/tree_defs.h"
 #include "kd_slam/icp/icp_.h"
 #include "kd_slam/icp/icp_cpu_.h"
-#include "kd_slam/icp/icp_cuda_.h"
 #include "utils/geometry_3d_.h"
 #include "utils/geometry_3d_impl_.h"
 
@@ -67,7 +66,6 @@ namespace kd_slam::d3 {
   };
 
   using ICP_3D_CPU=ICP_CPU_<ICP_<ICP_3D_Traits>>;
-  using ICP_3D_CUDA=ICP_CUDA_<ICP_<ICP_3D_Traits>>;
 } // namespace kd_slam::d3
 
 

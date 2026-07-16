@@ -89,15 +89,7 @@ namespace kd_slam {
           if (! tree) return;
           if (_temp_tree)
             throw std::runtime_error("already saved");
-#ifdef HAVE_CUDA
-          if (tree->isGPU()) {
-            _temp_tree=std::make_shared<TreeCUDA_<Tree_<NodeType>>>(*tree);
-          } else {
-#endif
-            _temp_tree=std::make_shared<TreeCPU_<Tree_<NodeType>>>(*tree);
-#ifdef HAVE_CUDA
-          }
-#endif
+          _temp_tree=tree->clone();  
         }
 
         void restore() {

@@ -1,5 +1,5 @@
 #pragma once
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 #include <cuda_runtime.h>
 #endif
 
@@ -21,7 +21,7 @@ namespace kd_slam::cuda{
   };
 }
 
-#ifdef HAVE_CUDA
+#ifdef __CUDACC__
 
 #define CUDA_CHECK(err) (HandleError(err, __FILE__, __LINE__))
 

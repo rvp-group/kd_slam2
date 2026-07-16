@@ -1,6 +1,5 @@
 #include "kd_app_common_.h"
 #include "kd_slam/bundler/bundler_proc_.h"
-#include "kd_slam/cuda/cuda_common.h"
 #include "instances_2d.h"
 #include "instances_3d.h"
 
@@ -75,13 +74,7 @@ static int run(PropertyContainerManager& manager,
 }
 
 int main(int argc, char** argv) {
-  srrgInit(argc, argv);
-  kd_slam_registerTypes2D();
-  kd_slam_registerTypes3D();
-#ifdef HAVE_CUDA
-  using namespace kd_slam::cuda;
-  CUDA_CHECK(cudaSetDeviceFlags(cudaDeviceScheduleBlockingSync));
-#endif
+  setupMain(argc, argv);
 
   ParseCommandLine cmd(argv, banner);
   ArgumentString a_config    (&cmd, "c",  "config",     "pipeline config file",          "config.json");

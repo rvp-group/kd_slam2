@@ -6,7 +6,6 @@
 #include "utils/geometry_2d_.h"
 #include "kd_slam/icp/icp_.h"
 #include "kd_slam/icp/icp_cpu_.h"
-#include "kd_slam/icp/icp_cuda_.h"
 #include "kd_slam/utils/geometry_2d_.h"
 #include "kd_slam/utils/geometry_2d_impl_.h"
 
@@ -70,7 +69,6 @@ namespace kd_slam::d2 {
   };
 
   using ICP_2D_CPU=ICP_CPU_<ICP_<ICP_2D_Traits>>;
-  using ICP_2D_CUDA=ICP_CUDA_<ICP_<ICP_2D_Traits>>;
 
 } // namespace kd_slam::d2
 

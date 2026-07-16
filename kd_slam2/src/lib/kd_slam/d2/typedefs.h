@@ -4,11 +4,6 @@
 #include "kd_slam/cticp/cticp_cpu_.h"
 #include "kd_slam/tree/flat_leaf_policy_.h"
 
-#ifdef HAVE_CUDA
-#include "kd_slam/icp/icp_cuda_.h"
-#include "kd_slam/cticp/cticp_cuda_.h"
-#endif
-
 namespace kd_slam::d2 {
 
   using ICPTraits           = ICP_2D_Traits;
@@ -29,13 +24,6 @@ namespace kd_slam::d2 {
   using CTICPBaseType        = CTICP_<CTICP_Traits>;
   using CTICPCPUType         = CTICP_CPU_<CTICPBaseType>;
   using VelocityType         = CTICP_2D_Traits::VelocityType;
-
-  
-#ifdef HAVE_CUDA
-  using ICPCUDAType          = ICP_CUDA_<ICPBaseType>;
-  using TreeCUDAType       = ICPCUDAType::KDTreeType;
-  using CTICPCUDAType        = CTICP_CUDA_<CTICPBaseType>;
-#endif
 
   constexpr const char* DUMP_STRING =
     "set_size_ratio -1\n plot '-' with vectors title \"fixed\", '-' with vectors title \"moving\"";

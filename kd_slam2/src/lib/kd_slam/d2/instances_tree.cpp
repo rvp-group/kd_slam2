@@ -8,7 +8,7 @@ namespace kd_slam {
   using Voxelizer3D     = utils::Voxelizer_<d3::PointTraits>;
   using TreeLoader3D    = TreeLoader_<d3::NodeType>;
 
-  void kd_slam_registerTreeTypes3D() {
+  void registerTreeTypes3D() {
     BOSS_REGISTER_CLASS(TreeGenerator3D);
     BOSS_REGISTER_CLASS(Voxelizer3D);
     BOSS_REGISTER_CLASS(TreeLoader3D);

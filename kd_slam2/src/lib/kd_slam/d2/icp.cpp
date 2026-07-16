@@ -3,7 +3,6 @@
 #include "icp_.h"
 #include "kd_slam/icp/icp_impl_.h"
 #include "kd_slam/icp/icp_cpu_impl_.h"
-#include "kd_slam/icp/icp_cuda_.h"
 #include "typedefs.h"
 
 // Explicit instantiations must be in the namespace where the template is defined
@@ -17,7 +16,7 @@ namespace kd_slam {
 
   using ICPCPU2D   = d2::ICPCPUType;
   
-  void kd_slam_registerICPCPUTypes2D() {
+  void registerICPCPUTypes2D() {
     BOSS_REGISTER_CLASS(ICPCPU2D);
     BOSS_REGISTER_CLASS(ICPTerminationCriteriaScore);
   }

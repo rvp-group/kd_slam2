@@ -14,7 +14,7 @@ namespace kd_slam {
 
   using CTICPCPU2D   = d2::CTICPCPUType;
 
-  void kd_slam_registerCTICPCPUTypes2D() {
+  void registerCTICPCPUTypes2D() {
     BOSS_REGISTER_CLASS(CTICPCPU2D);
   }
 

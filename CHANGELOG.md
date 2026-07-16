@@ -1,5 +1,26 @@
 # Changelog
 
+## v2.2 -- 2026-07-16
+
+### Algo
+- Further separation of CPU and CUDA layers: now the cuda libraries override the compute conversion functions
+on load, via explicit function pointers
+- CMake auto-detects CUDA toolkit; HAVE_CUDA defaults ON but silently falls
+  back to OFF if toolkit not found.
+  __CUDACC__ replaces HAVE_CUDA as the C++ preprocessor guard in headers.
+  HAVE_CUDA flag become local, and disappeared from the CPU path
+- Tree_copyTo dispatch cleaned up: CPU-to-CPU constructor calls Tree_copyTo_
+  directly; base-type constructor delegates through function pointer
+- Apps are cuda agnostic, and attempt to load the cuda .so. If not found only the CPU types will be available.
+  The .so should be in the LD_LIBRARY_PATH
+
+
+### Build / infrastructure
+- Docker: uses now a stratified build (base->srrg->cpu->cuda).
+  CPU deployments stop at the CPU layer, GPU continue to the next stage.
+  Colcon does not handle that for now.
+
+	
 ## v2.1 -- 2026-07-09
 
 ### Algo

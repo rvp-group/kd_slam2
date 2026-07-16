@@ -14,7 +14,7 @@ namespace kd_slam {
 
   using CTICPCPU3D   = d3::CTICPCPUType;
 
-  void kd_slam_registerCTICPCPUTypes3D() {
+  void registerCTICPCPUTypes3D() {
     BOSS_REGISTER_CLASS(CTICPCPU3D);
   }
 

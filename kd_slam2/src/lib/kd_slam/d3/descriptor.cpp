@@ -26,7 +26,7 @@ namespace kd_slam {
   
   using DescriptorMatcher3D = descriptor::MatcherCPU_<d3::MatcherPoint3f>;
 
-  void kd_slam_registerDescriptorTypes3D() {
+  void registerDescriptorTypes3D() {
     using namespace std;
     BOSS_REGISTER_CLASS(DescriptorMatcher3D);
   }
