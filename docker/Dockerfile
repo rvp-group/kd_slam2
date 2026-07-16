@@ -62,6 +62,7 @@ RUN . /opt/ros/jazzy/setup.sh && \
     colcon build --cmake-args -DEIGEN3_INCLUDE_DIR=/usr/include/eigen3 && \
     rm -rf /ws/src /ws/build /tmp/repos.yml
 
+ARG BLAST_CACHE=1
 # -------------------------------------------------------------------
 FROM srrg AS cpu
 
