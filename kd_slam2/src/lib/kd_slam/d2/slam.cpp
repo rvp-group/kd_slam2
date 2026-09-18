@@ -12,10 +12,9 @@
 #include "kd_slam/map/velocity_prior_factor_impl_.h"
 #include "kd_slam/map/multiview_icp_factor_impl_.h"
 #include "kd_slam/map/multiview_cticp_factor_impl_.h"
-#include "kd_slam/localizer/localizer_proc_impl_.h"
 #include "kd_slam/bundler/bundler_proc_impl_.h"
 #include "kd_slam/optimizer/optimizer_proc_impl_.h"
-#include "kd_slam/motion_model/imu_motion_model_impl_.h"
+#include "kd_slam/motion_model/const_vel_motion_model_.h"
 
 using namespace std;
 
@@ -24,7 +23,6 @@ namespace kd_slam{
   namespace slam {
     template struct BundlerProc_<kd_slam::map::MapOwner_<kd_slam::d2::NodeType>>;
     template struct SLAMProc_<OptimizerProc_<TrackerProc_<kd_slam::map::MapOwner_<kd_slam::d2::NodeType>>>>;
-    template struct Localizer_<kd_slam::d2::NodeType>;
   }
 
   
@@ -33,9 +31,7 @@ namespace kd_slam{
   using VelocityPriorFactor2D  = slam::SLAM2D::SolverVelocityPriorFactor;
   using ZeroVelMotionModel2D  = slam::ZeroVelMotionModel_<slam::TrackerProc_<map::MapOwner_<d2::NodeType>>>;
   using ConstVelMotionModel2D  = slam::ConstVelMotionModel_<slam::TrackerProc_<map::MapOwner_<d2::NodeType>>>;
-  using IMUMotionModel2D       = slam::IMUMotionModel_<slam::TrackerProc_<map::MapOwner_<d2::NodeType>>>;
   template struct slam::ConstVelMotionModel_<slam::TrackerProc_<map::MapOwner_<d2::NodeType>>>;
-  template struct slam::IMUMotionModel_<slam::TrackerProc_<map::MapOwner_<d2::NodeType>>>;
 
   void registerSLAMTypes2D() {
     using namespace slam;
@@ -44,13 +40,11 @@ namespace kd_slam{
     variables_and_factors_2d_registerTypes();
     
     BOSS_REGISTER_CLASS(SLAM2D);
-    BOSS_REGISTER_CLASS(Localizer2D);
     BOSS_REGISTER_CLASS(Bundler2D);
     BOSS_REGISTER_CLASS(MultiViewICPFactor2D);
     BOSS_REGISTER_CLASS(MultiViewCTICPFactor2D);
     BOSS_REGISTER_CLASS(VelocityPriorFactor2D);
     BOSS_REGISTER_CLASS(ZeroVelMotionModel2D);
     BOSS_REGISTER_CLASS(ConstVelMotionModel2D);
-    BOSS_REGISTER_CLASS(IMUMotionModel2D);
   }
 }

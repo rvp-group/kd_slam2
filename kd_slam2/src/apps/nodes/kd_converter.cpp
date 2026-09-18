@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include "kd_app_common_.h"
 #include "srrg_system_utils/parse_command_line.h"
 #include "srrg_system_utils/system_utils.h"
 #include "srrg_property/property_container_manager.h"
@@ -92,6 +93,7 @@ static int run(PropertyContainerManager& manager,
 }
 
 int main(int argc, char** argv) {
+  setupMain(argc, argv);
   srrgInit(argc, argv);
 
   using namespace std;

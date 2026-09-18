@@ -93,6 +93,7 @@ static int run(PropertyContainerManager& manager,
 
   bool first_frame=true;
   auto proc_loop = [&]() {
+    pthread_setname_np(pthread_self(), "runner");
     while (true) {
       auto frame = queue.pop();
       if (!frame) {

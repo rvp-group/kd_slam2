@@ -78,6 +78,9 @@ namespace kd_slam {
     case GLFW_KEY_F:
       _follow_cam = !_follow_cam;
       return true;
+    case GLFW_KEY_N:
+      _drawable->show_normals = !_drawable->show_normals;
+      return true;
     default:
       return GLFWViewer::handleKey(key, cloudcode, action, mods);
     }

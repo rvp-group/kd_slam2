@@ -18,6 +18,8 @@ namespace kd_slam {
     using PointType  = typename KDTreeBase::PointType;
     using VectorType = typename KDTreeBase::VectorType;
     using Scalar     = typename KDTreeBase::Scalar;
+    using VPoint     = typename KDTreeBase::VPoint;
+
     using MatrixType = typename KDTreeBase::MatrixType;
     using TreeCPUType  = TreeCPU_<KDTreeBase>;
     using TreeCUDAType = TreeCUDA_<KDTreeBase>;
@@ -42,8 +44,8 @@ namespace kd_slam {
   
     void copyNodes(Tree_<NodeType>& other) const override;
 
-    std::vector<VectorType> extractCompressedLeaves() const override;
-    std::vector<VectorType> extractCompressedLeaves(const VelocityVectorType& v) const override;
+    std::vector<VPoint> extractVPoints(const VelocityVectorType& v) const override;
+
   
     // dtor
     ~TreeCUDA_();

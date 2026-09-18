@@ -71,7 +71,8 @@ namespace kd_slam {
       pushEvent(std::make_shared<EventOdometry>(_floating_frame->ts,
                                                 _pose_in_kf,
                                                 _floating_frame->pose_in_world,
-                                                best.stats));
+                                                best.stats,
+                                                best.coverage));
 
       return true;
     }

@@ -42,7 +42,6 @@ namespace kd_slam {
       using SolverPGOFactorType            = typename MapTraits_<Node_>::SolverPGOFactorType;
       using SolverVelocityVariableType     = typename MapTraits_<Node_>::SolverVelocityVariableType;
       using SolverVelocityPriorFactorType  = typename MapTraits_<Node_>::SolverVelocityPriorFactorType;
-      using SolverGravityPriorFactorType   = typename MapTraits_<Node_>::SolverGravityPriorFactorType;
       
       struct Frame : public FrameTree {
         using InformationMatrixType = PoseHessianType;
@@ -60,7 +59,6 @@ namespace kd_slam {
         SolverVariableType*            solver_variable       = nullptr;
         SolverVelocityVariableType*    solver_velocity       = nullptr;
         SolverVelocityPriorFactorType* solver_velocity_prior = nullptr;
-        SolverGravityPriorFactorType*  solver_gravity_prior  = nullptr;
         using FrameTree::ts;
         using FrameTree::tree;
         Frame(double ts,
@@ -122,6 +120,7 @@ namespace kd_slam {
       struct PGOFactor : public SolverFactorBridge {
         using InformationMatrixType = PoseHessianType;
         ICPStats        stats;
+        Scalar          coverage;
         IsometryType    Z_from_to;
         IsometryType    Z_to_from;
         PoseHessianType omega_from_to;
@@ -139,7 +138,7 @@ namespace kd_slam {
         ICP*  icp         = nullptr;
         Tree* tree_moving = nullptr;
         Tree* tree_fixed  = nullptr;
-        Scalar disable_inlier_ratio = 1;
+        Scalar disable_hit_ratio = 1;
         MultiViewICPFactor(): SolverFactorBridge(ICPMultiView){}
       };
       using MultiViewICPFactorPtr = std::shared_ptr<MultiViewICPFactor>;
@@ -153,7 +152,7 @@ namespace kd_slam {
         int    vel_to_ref   = -1;
         Tree*  tree_moving  = nullptr;
         Tree*  tree_fixed   = nullptr;
-        Scalar disable_inlier_ratio = 1;
+        Scalar disable_hit_ratio = 1;
         MultiViewCTICPFactor(): SolverFactorBridge(CTICPMultiView){}
       };
       

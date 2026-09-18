@@ -121,21 +121,23 @@ namespace kd_slam {
   template <typename NodeType_>
   void KDStateReplay_<NodeType_>::replay() {
     ICPStats empty{};
-
+    using VPoint = typename Tree_<NodeType>::VPoint;
+    using VectorType   = typename NodeType_::VectorType;
     // keyframes: fire EvAdded + EvKF (+ EvVel)
     int prev_kf = -1;
     for (auto& [kf_idx, kf] : _keyframe_records) {
-      std::vector<VectorType> leaves;
+      std::vector<VPoint> vpoints;
       if (_loader && !kf.topic.empty() && kf.stamp_ns) {
         auto ft = _loader->getFrame(kf.topic, kf.bag_offset, kf.stamp_ns);
         if (ft && ft->tree)
-          leaves = ft->tree->extractCompressedLeaves();
+          vpoints = ft->tree->extractVPoints();
       }
       pushEvent(std::make_shared<EvAdded>(
         kf.ts, kf.count, -1,
         IsometryType::Identity(),
-        leaves,
+        vpoints,
         FrameAddedReplay,
+        VectorType::Zero(),
         kf.topic, kf.bag_offset, kf.stamp_ns));
       pushEvent(std::make_shared<EvKF>(
         kf.ts, kf_idx, prev_kf, kf.pose_in_kf, empty));
@@ -158,11 +160,12 @@ namespace kd_slam {
       pushEvent(std::make_shared<EvAdded>(
         fr.ts, fr.count, fr.kf_ref,
         fr.pose_in_kf,
-        std::vector<VectorType>{},
+        std::vector<VPoint>{},
         fr.reason,
+        VectorType::Zero(),
         fr.topic, fr.bag_offset, fr.stamp_ns));
       pushEvent(std::make_shared<EvOdom>(
-        fr.ts, fr.pose_in_kf, pose_global, empty));
+                                         fr.ts, fr.pose_in_kf, pose_global, empty, 0.));
     }
 
     // one final proc + done

@@ -35,11 +35,15 @@ namespace kd_slam {
         pushEvent(std::make_shared<EventOdometry>(_floating_frame->ts,
                                                  _pose_in_kf,
                                                  _floating_frame->pose_in_world,
-                                                 f_loop->stats));
+                                                  f_loop->stats,
+                                                  f_loop->coverage));
       } else {
         if (shouldSwitchKeyframe(_pose_in_kf, _odom_aligner->stats)) {
+          Scalar reloc_backup=_slam_params.relocalize_thresholds.slack;
+          _slam_params.relocalize_thresholds.slack=_pose_in_kf.translation().norm()*reloc_backup;
           t0 = chrono::steady_clock::now();
           bool relocalize_ok = relocalize();
+          _slam_params.relocalize_thresholds.slack=reloc_backup;
           t_rel = chrono::duration<double, milli>(chrono::steady_clock::now() - t0).count();
           if (relocalize_ok)
             _status = Relocalized;
@@ -61,7 +65,7 @@ namespace kd_slam {
         }
       }
 
-      pushEvent(std::make_shared<EventFrameProcessed>(_status, _t_align, 0, t_loop, t_rel, t_opt, pchi));
+      pushEvent(std::make_shared<EventFrameProcessed>(_status, _t_align, 0, t_loop, t_rel, t_opt, pchi, _floating_frame->ts));
 
       if (previous_kf != _keyframe) {
         t0 = chrono::steady_clock::now();

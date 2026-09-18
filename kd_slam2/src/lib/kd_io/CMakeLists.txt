@@ -1,4 +1,4 @@
-add_library(kd_io SHARED scan_utils.cpp kd_tum_writer.cpp kd_state_writer.cpp kd_state_reader.cpp tum_io.cpp tree_loader_2d.cpp tree_loader_3d.cpp)
+add_library(kd_io SHARED message_queue.cpp scan_utils.cpp kd_tum_writer.cpp kd_state_writer.cpp kd_state_reader.cpp tum_io.cpp tree_loader_2d.cpp tree_loader_3d.cpp)
 target_link_libraries(kd_io lz4 zstd kd_slam_icp_2d kd_slam_icp_3d kd_slam_event kd_slam_frame kd_slam_utils)
 
 find_package(rosbag2_cpp REQUIRED)

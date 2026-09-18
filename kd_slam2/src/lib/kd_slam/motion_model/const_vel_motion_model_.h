@@ -26,6 +26,7 @@ namespace kd_slam{
       // the delta is the motion of floating (before - now). just 1 scan
       void doUpdate(const IsometryType& delta,
                             const PoseHessianType& sigma=PoseHessianType::Zero()) override {
+        Base::doUpdate(delta, sigma);
         float alpha=param_motion_model_alpha.value();
         VelocityVectorType dv=TrackerType::GeometryTraits::logmap(delta);
         _T_delta_log=alpha*_T_delta_log+(1.-alpha)*dv;

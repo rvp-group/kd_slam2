@@ -57,6 +57,7 @@ namespace kd_slam {
     void ICP_CUDA_<ICP_BaseType_>::setMoving(const TreeBaseType& moving) {
       this->_moving = &moving;
       _workspace->resize(moving._num_leaves);
+      moving_leaves_stats.resize(moving._num_leaves);
     }
 
     template <typename ICP_BaseType_>
@@ -81,18 +82,18 @@ namespace kd_slam {
                       const typename ICP_BaseType_::State moving_state,
                       const typename ICP_BaseType_::QuadraticTermCache cache,
                       const typename ICP_BaseType_::ParamsType  params,
-                      bool stats_mode) {
+                      bool disable_outliers) {
       int tid = threadIdx.x + blockIdx.x * blockDim.x;
       if (fixed_num_nodes <= 0)          return;
       if (tid >= moving_num_leaves) return;
       int leaf_idx = moving_leaves_indices_ptr[tid];
       const typename ICP_BaseType_::NodeType& moving_leaf = moving_nodes_ptr[leaf_idx];
-      ICP_BaseType_::quadraticTerm(ws, tid, fixed_state, moving_state, cache, fixed_nodes_ptr, moving_leaf, params, stats_mode);
+      ICP_BaseType_::quadraticTerm(ws, tid, fixed_state, moving_state, cache, fixed_nodes_ptr, moving_leaf, params, disable_outliers);
     }
 
     // ---- buildQuadraticForm ----------------------------------------------------
     template <typename ICP_BaseType_>
-    void ICP_CUDA_<ICP_BaseType_>::_buildQuadraticForm(bool stats_mode) {
+    void ICP_CUDA_<ICP_BaseType_>::_buildQuadraticForm(bool disable_outliers) {
       using StatsType    = typename ICP_BaseType_::StatsType;
       using DiagPoseType = typename ICP_BaseType_::DiagPoseType;
 
@@ -113,7 +114,7 @@ namespace kd_slam {
                                                          this->moving_state,
                                                          this->_cache,
                                                          this->params,
-                                                         stats_mode);
+                                                         disable_outliers);
       // reduces run on the same stream: ordered after Jacobian kernel automatically;
       // the cudaMemcpy(D2H) inside getDeferredResult is the effective sync point
       //CUDA_CHECK(cudaDeviceSynchronize());
@@ -124,11 +125,15 @@ namespace kd_slam {
       //CUDA_CHECK(cudaDeviceSynchronize());
       //CUDA_CHECK(cudaGetLastError());
 
-
       auto diag_pose = _workspace->_diag_pose_adder.getDeferredResult();
       this->stats=_workspace->_stats_adder.getDeferredResult();
   
       diag_pose.unpack(this->H, this->b);
+      using StatsType    = typename ICP_BaseType_::StatsType;
+      CUDA_CHECK(cudaMemcpy(&moving_leaves_stats[0],
+                            _workspace->_stats,
+                            sizeof(StatsType)*this->_moving->_num_leaves,
+                            cudaMemcpyDeviceToHost));
     }
 
   }

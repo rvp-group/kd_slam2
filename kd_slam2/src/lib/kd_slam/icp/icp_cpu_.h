@@ -27,10 +27,11 @@ struct ICP_CPU_: public Base_ {
   using CoefficientType     = typename Traits::CoefficientType;
   using TreeBaseType      = typename Base::TreeBaseType;
   using KDTreeType          = TreeCPU_<Tree_<NodeType>>;
-  using StatsType           = typename Base::StatsType;
+  using StsaatsType           = typename Base::StatsType;
   using DiagPoseType        = typename Base::DiagPoseType;
   using PointsVectorType    = std::vector<PointType>;
   using NodesVectorType     = std::vector<NodeType>;
+  using Base::moving_leaves_stats;
   PARAM(srrg2_core::PropertyInt,   num_threads,        "max threads 0/1: disable mt", 0, nullptr);
   
   static constexpr bool IsGPU=false;
@@ -42,7 +43,7 @@ struct ICP_CPU_: public Base_ {
   void setFixed(const TreeBaseType& fixed) override;
   
 protected:
-  void _buildQuadraticForm(bool stats_mode=false) override;
+  void _buildQuadraticForm(bool disable_outliers=false) override;
 
 };
 

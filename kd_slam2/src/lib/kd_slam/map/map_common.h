@@ -11,11 +11,13 @@ namespace kd_slam {
     int    min_hops         = -1;   // -1 = no lower bound
     int    max_hops         = -1;   // -1 = no upper bound
     Scalar slack            = 1.5f;
+    Scalar min_coverage     = 0.5f;
   };
 
   struct TrackerParams {
     using Scalar = float;
     Scalar min_inlier_frac       = 0.6f;
+    Scalar min_coverage          = 0.5f;
     Scalar max_kf_trans          = 3.0f;
     Scalar max_kf_rot_rad        = 2*M_PI;
   };
@@ -24,21 +26,20 @@ namespace kd_slam {
     using Scalar = float;
     Scalar pgo_chi2_threshold     = 0.1f;
     Scalar velocity_prior_info    = 1e3f;
-    Scalar imu_gravity_prior_info = 1e3f;
   };
 
   struct BAParams {
     using Scalar = float;
     Scalar ba_range                = 10.f;
-    Scalar ba_disable_inlier_ratio = 0.3f;
-    MatchThresholds cure_thresholds             = {100.f, 0.3f, 3.f, -1, -1,  0.f};
+    Scalar ba_disable_hit_ratio = 0.3f;
+    MatchThresholds cure_thresholds             = {100.f, 0.3f, 3.f, -1, -1,  0.f, 0.5f};
   };
 
   struct SLAMParams {
     using Scalar = float;
-    MatchThresholds relocalize_thresholds       = {100.f, 0.7f, 0.1f, -1,  5,  1.5f};
-    MatchThresholds loop_thresholds             = {100.f, 0.7f, 0.1f, 20, -1,  1.5f};
-    MatchThresholds factor_thresholds           = {100.f, 0.3f, 0.1f, -1,  -1,  0.5f};
+    MatchThresholds relocalize_thresholds       = {100.f, 0.7f, 0.1f, -1,  5,  1.5f, 0.0f};
+    MatchThresholds loop_thresholds             = {100.f, 0.7f, 0.1f, 20, -1,  1.5f, 0.5f};
+    MatchThresholds factor_thresholds           = {100.f, 0.3f, 0.1f, -1,  -1,  0.5f, 0.0f};
     Scalar loop_max_orientation_rad             = (M_PI / 180.f) * 10.f;
     Scalar loop_consensus_max_orientation_rad   = (M_PI / 180.f) * 10.f;
     Scalar loop_consensus_max_translation       = 0.5;
@@ -47,12 +48,6 @@ namespace kd_slam {
     Scalar covariance_propagate_rot_cond_diag   = 0.001f;
   };
 
-  struct LocalizerParams {
-    using Scalar = float;
-    Scalar ba_range = 10.f;
-    MatchThresholds relocalize_thresholds = {100.f, 0.7f, 0.1f, -1, 5, 1.5f};
-  };
-    
   enum KDFactorType {
     Odometry,
     Relocalize,
@@ -97,12 +92,15 @@ namespace kd_slam {
     MatchOk,
     MatchFailChi2Spatial,
     MatchFailHops,
+    MatchFailCoverage,
     MatchFailInlierRatio,
     MatchFailScore,
     MatchFailFinite,
     MatchDescriptorFail,
     MatchLoopConsensusFail,
     MatchLoopGraphFail,
+    MatchLoopICPFloatFail,
+    MatchLoopICPKFFail,
     MatchUndetermined
   };
 
@@ -110,12 +108,15 @@ namespace kd_slam {
     "MatchOk",
     "MatchFailChi2Spatial",
     "MatchFailHops",
+    "MatchFailCoverage",
     "MatchFailInlierRatio",
     "MatchFailScore",
     "MatchFailFinite",
     "MatchDescriptorFail",
     "MatchLoopConsensusFail",
     "MatchLoopGraphFail",
+    "MatchLoopICPFloatFail",
+    "MatchLoopICPKFFail",
     "MatchUndetermined"
   };
 
@@ -127,6 +128,7 @@ namespace kd_slam {
     Scalar rotation_delta=-1;
     Scalar translation_delta=-1;
     Scalar score=-1;
+    Scalar coverage=-1;
     Scalar inlier_ratio=-1;
     MatchLabelResult match_result=MatchUndetermined;
   };

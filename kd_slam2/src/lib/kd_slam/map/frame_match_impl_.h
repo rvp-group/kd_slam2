@@ -75,13 +75,16 @@ namespace kd_slam {
       alignFrames(aligner, fixed_frame, moving_frame, pose, ft, stats_mode);
 
       stats        = aligner.stats;
-      int          num_leaves=std::max(moving_frame->tree->_num_leaves, fixed_frame->tree->_num_leaves);
-      inlier_ratio = Scalar(stats.num_inliers) / Scalar(num_leaves);
-      if (num_leaves)
-        score = inlier_ratio / (Scalar(stats.chi2_kernelized) / Scalar(stats.num_inliers) + 1e-6f);
+
+      coverage = aligner.coverage();
+      
+      inlier_ratio = stats.inlierRatio();
+      score = stats.score();
 
       if (inlier_ratio < th.min_inlier_ratio) {
         result = MatchFailInlierRatio;
+      } else if (coverage<th.min_coverage) {
+        result = MatchFailCoverage;
       } else if (!std::isfinite(score) || score < th.min_score) {
         result = MatchFailScore;
       } else if(!aligner.getX().matrix().allFinite()) {
@@ -93,8 +96,9 @@ namespace kd_slam {
       }
       if (aligner.logStream()) {
         *aligner.logStream() << "MATCH_RESULT| " 
-                        << " inlr: " << inlier_ratio
-                        << " score: " << score;
+                             << " inlr: " << inlier_ratio
+                             << " scr: " << score
+                             << " cvr: " << coverage;
         *aligner.logStream() << "| " << MatchLabelResultStr[result] << endl;
       }
     }
@@ -109,7 +113,8 @@ namespace kd_slam {
          << " chn:" << std::setprecision(3) << stats.chi2_kernelized / stats.num_inliers
          << " inl:" << std::setprecision(1) << inlier_ratio * 100.f << "%"
          << " des:" << std::setprecision(3) << desc_distance
-         << " scr:" << std::setprecision(3) << score;
+         << " scr:" << std::setprecision(3) << score
+         << " cov:" << std::setprecision(3) << coverage;
       return os;
     }
 

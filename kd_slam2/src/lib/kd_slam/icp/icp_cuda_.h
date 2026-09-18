@@ -32,6 +32,7 @@ struct ICP_CUDA_: public Base_ {
   using TreeBaseType      = typename Base::TreeBaseType;
   using KDTreeType          = TreeCUDA_<Tree_<NodeType>>;
   using WorkspaceType       = ICP_CUDAWorkspace_<Base_>;
+  using Base::moving_leaves_stats;
 
   static constexpr bool IsGPU=true;
   bool isGPU() const override {return IsGPU;}
@@ -42,7 +43,7 @@ struct ICP_CUDA_: public Base_ {
   void setMoving(const TreeBaseType& moving) override;
   void setFixed(const TreeBaseType& fixed) override;
 protected:
-  void _buildQuadraticForm(bool stats_mode=false) override;
+  void _buildQuadraticForm(bool disable_outliers=false) override;
   WorkspaceType* _workspace=0;
 };
 

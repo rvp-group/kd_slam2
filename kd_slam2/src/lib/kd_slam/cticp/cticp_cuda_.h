@@ -34,6 +34,7 @@ namespace kd_slam { namespace cticp {
       using KDTreeType           = TreeCUDA_<Tree_<NodeType>>;
       using WorkspaceType        = CTICP_CUDAWorkspace_<Base_>;
       using State                = typename Base::State;
+      using Base::moving_leaves_stats;
 
       static constexpr bool IsGPU=true;
       bool isGPU() const override {return IsGPU;}
@@ -47,8 +48,8 @@ namespace kd_slam { namespace cticp {
       CTICP_CUDA_();
       ~CTICP_CUDA_();
     protected:
-      void _buildQuadraticForm(bool stats_mode=false) override;
-      void _buildQuadraticFormDual(bool stats_mode=false) override;
+      void _buildQuadraticForm(bool disable_outliers=false) override;
+      void _buildQuadraticFormDual(bool disable_outliers=false) override;
   
     };
 

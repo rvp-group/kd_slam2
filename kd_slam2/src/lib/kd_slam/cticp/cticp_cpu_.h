@@ -38,6 +38,8 @@ namespace kd_slam {
       using PointsVectorType     = std::vector<PointType>;
       using NodesVectorType      = std::vector<NodeType>;
       using State                = typename Base::State;
+      using Base::moving_leaves_stats;
+
       PARAM(srrg2_core::PropertyInt,   num_threads,        "max threads 0/1: disable mt", 0, nullptr);
 
       static constexpr bool IsGPU=false;
@@ -51,8 +53,8 @@ namespace kd_slam {
                                   const State& s, bool skip_leaves=false) override;
 
     protected:
-      void _buildQuadraticForm(bool stats_mode=false) override;
-      void _buildQuadraticFormDual(bool stats_mode=false) override;
+      void _buildQuadraticForm(bool disable_outliers=false) override;
+      void _buildQuadraticFormDual(bool disable_outliers=false) override;
       
     };
 

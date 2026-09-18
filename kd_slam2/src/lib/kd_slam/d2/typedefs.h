@@ -89,7 +89,6 @@ namespace kd_slam {
       using SolverPGOFactorType            = srrg2_solver::SE2PosePoseLeftErrorFactorAD;
       using SolverVelocityVariableType     = srrg2_solver::VariableVector3;
       using SolverVelocityPriorFactorType  = VelocityPriorFactor_<srrg2_solver::VariableVector3>;
-      using SolverGravityPriorFactorType   = void;
     };
   }
 }

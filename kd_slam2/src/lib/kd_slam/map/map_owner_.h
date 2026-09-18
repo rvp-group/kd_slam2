@@ -31,7 +31,6 @@ namespace kd_slam {
       using SolverPGOFactorType           = typename MapType::SolverPGOFactorType;
       using SolverVelocityVariableType    = typename MapType::SolverVelocityVariableType;
       using SolverVelocityPriorFactorType = typename MapType::SolverVelocityPriorFactorType;
-      using SolverGravityPriorFactorType  = typename MapType::SolverGravityPriorFactorType;
       using SolverFactorBridge            = typename MapType::SolverFactorBridge;
       using SolverFactorBridgePtr         = typename MapType::SolverFactorBridgePtr;
       using PGOFactor                     = typename MapType::PGOFactor;

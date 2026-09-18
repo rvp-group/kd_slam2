@@ -57,6 +57,7 @@ namespace kd_slam {
       using AlignerBaseType::_fixed_forest;
       using AlignerBaseType::_pose_prior_Z;
       using AlignerBaseType::_pose_prior_info;
+      using AlignerBaseType::moving_leaves_stats;
 
       PARAM(srrg2_core::PropertyFloat, velocity_damping, "velocity regularization weight", 100.f, &this->_params_changed);
 
@@ -75,12 +76,16 @@ namespace kd_slam {
           return;
         AlignerBaseType::syncParams();
         params.kernel_threshold      = this->param_kernel_threshold.value();
+        params.inlier_only_kernel_threshold      = this->param_inlier_only_kernel_threshold.value();
         params.damping               = this->param_damping.value();
         params.max_error             = this->param_max_error.value();
         params.min_normal_cos        = this->param_min_normal_cos.value();
         params.min_good_measurements = this->param_min_good_measurements.value();
-        params.max_iterations        = this->param_max_iterations.value();
         params.velocity_damping      = param_velocity_damping.value();
+        params.mean_distance_min     = this->param_mean_distance_min.value(); 
+        params.mean_distance_max     = this->param_mean_distance_max.value(); 
+        params.mean_distance_gain    = this->param_mean_distance_gain.value();
+
         this->_params_changed = false;
       }
 
@@ -194,7 +199,7 @@ namespace kd_slam {
                          const NodeType* fixed_nodes_ptr,
                          const NodeType& moving_leaf,
                          const ParamsType& params,
-                         bool stats_mode=false);
+                         bool disable_outliers=false);
 
       // Like quadraticTerm but also computes J_B_vel via errorAndJacobianVelocityB.
       // Populates all DestViewDual fields in a single pass.
@@ -206,9 +211,9 @@ namespace kd_slam {
                              const NodeType* fixed_nodes_ptr,
                              const NodeType& moving_leaf,
                              const ParamsType& params,
-                         bool stats_mode=false);
+                         bool disable_outliers=false);
 
-      bool oneRound(bool stats_mode=false) override;
+      bool oneRound(bool disable_update=false, bool disable_outliers=false) override;
       std::ostream& printStatus(std::ostream& os);
 
       // applies the velocity motion-compensation to all nodes of a target cloud
@@ -234,12 +239,12 @@ namespace kd_slam {
       virtual ~CTICP_() {}
       QuadraticTermCache _cache;
 
-      void buildQuadraticForm(bool stats_mode=false) override;
+      void buildQuadraticForm(bool disable_outliers=false) override;
 
       // Single-pass dual: populates H, b (standard) + dual B-vel outputs.
-      void buildQuadraticFormDual(bool stats_mode=false);
+      void buildQuadraticFormDual(bool disable_outliers=false);
 
-      void buildQuadraticForm(FixedEntryBase& fixed, bool stats_mode=false) override;
+      void buildQuadraticForm(FixedEntryBase& fixed, bool disable_outliers=false) override;
 
     protected:
       void updateCache();
@@ -250,10 +255,10 @@ namespace kd_slam {
         _saved_start_fixed_state=fixed_state;
       }
 
-      virtual void _buildQuadraticForm(bool stats_mode=false) = 0;
+      virtual void _buildQuadraticForm(bool disable_outliers=false) = 0;
 
       // Single-pass dual: populates H, b (standard) + dual B-vel outputs.
-      virtual void _buildQuadraticFormDual(bool stats_mode=false) = 0;
+      virtual void _buildQuadraticFormDual(bool disable_outliers=false) = 0;
       FixedEntry _acc_fixed;
       State _saved_start_moving_state;
       State _saved_start_fixed_state;

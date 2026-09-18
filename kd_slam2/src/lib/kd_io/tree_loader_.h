@@ -2,6 +2,7 @@
 #include "kd_io/message_reader.h"
 #include "kd_io/message_writer.h"
 #include "kd_io/slam_messages.h"
+#include "kd_io/message_queue.h"
 #include "kd_slam/tree/tree_generator_.h"
 #include "kd_slam/utils/voxelizer_.h"
 #include "kd_slam/frame/frame_queue_base.h"
@@ -33,7 +34,13 @@ namespace kd_slam {
     using FrameTree           = frame::FrameTree_<NodeType>;
     using PointCloudType      = std::vector<typename PointTraits::PointType>;
     static constexpr int Dim  = NodeType_::Dim;
+
     
+    struct InternalCloudData  {
+      RosHeader header;
+      std::vector<typename NodeType::Traits::PointType> points;
+    };
+
     PARAM(srrg2_core::PropertyBool,                        verbose,   "print progress to stderr",             false,      nullptr);
     PARAM(srrg2_core::PropertyString,                      out_topic, "topic for output trees",               "/kdtrees", nullptr);
     PARAM(srrg2_core::PropertyConfigurable_<MessageReader>, reader,   "message reader",                       nullptr,    nullptr);
@@ -68,9 +75,19 @@ namespace kd_slam {
 
     void _tryResolveTF();
 
+    std::shared_ptr<FrameTree> fromInternalCloudMsg(std::shared_ptr<Message_<InternalCloudData>> msg);
+    
     std::shared_ptr<FrameTree> fromCloudMsg(std::shared_ptr<Message_<PointCloudDataType>> msg);
     std::shared_ptr<FrameTree> fromTreeMsg(std::shared_ptr<Message_<TreeDataType>> msg);
+    void _reader_runner();
+    void _voxelizer_runner();
     void _runner();
+    MessageQueueBounded _reader_queue;
+    MessageQueueBounded _voxelizer_queue;
+    double t_read_ms = 0; 
+    double t_tree_ms = 0;
+    double t_vox_ms = 0;
+
   };
 
 } // namespace kd_slam

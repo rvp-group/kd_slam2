@@ -29,7 +29,6 @@ namespace kd_slam {
 
     using SolverVelocityVariableType = typename MapType::SolverVelocityVariableType;
     using SolverVelocityPriorFactorType  = typename MapType::SolverVelocityPriorFactorType;
-    using SolverGravityPriorFactorType   = typename MapType::SolverGravityPriorFactorType;
     using SolverVariableType         = typename MapType::SolverVariableType;
     using SolverPGOFactorType        = typename MapType::SolverPGOFactorType;
     using SolverMultiviewICPFactorType   = map::MultiViewICPFactor_<NodeType_>;
@@ -46,7 +45,6 @@ namespace kd_slam {
     
     std::map<int, SolverVelocityVariableType*> vel_vars;
     std::map<int, SolverVelocityPriorFactorType*>  vel_priors;
-    std::map<int, SolverGravityPriorFactorType*>          gravity_priors;
     std::map<int, SolverVariableType*>          pose_vars;
 
     for (auto v_it : factor_graph->variables()) {
@@ -60,14 +58,6 @@ namespace kd_slam {
     for (auto f_it : factor_graph->factors()) {
       if (auto f_prior = dynamic_cast<SolverVelocityPriorFactorType*>(f_it.second)) {
         vel_priors[f_prior->variableId(0) - MAX_FRAMES] = f_prior;
-      }
-      if constexpr (NodeType_::Dim == 3) {
-        if (auto f_gprior = dynamic_cast<SolverGravityPriorFactorType*>(f_it.second)) {
-          gravity_priors[f_gprior->variableId(0)] = f_gprior;
-          /*
-          f_gprior->setInformationMatrix(SolverGravityPriorFactorType::InformationMatrixType::Identity()*params.imu_gravity_prior_info);
-          */
-        }
       }
     }
     
@@ -103,10 +93,6 @@ namespace kd_slam {
         frame->solver_velocity_prior=vp_it->second;
       } 
 
-      auto gp_it=gravity_priors.find(ref);
-      if (gp_it!=gravity_priors.end()) {
-        frame->solver_gravity_prior=gp_it->second;
-      }
         
       frame_graph->addFrame(frame);
       assert(ref==frame->ref() && "ref mismatch");

@@ -56,8 +56,8 @@ namespace kd_slam{
       registerCallback<EvProc>([this](std::shared_ptr<EvProc> ev) {
         if (!_current)
           return;
-        _current->compressed_leaves.clear();
-        _current->compressed_leaves.shrink_to_fit();
+        _current->vpoints.clear();
+        _current->vpoints.shrink_to_fit();
       });
     }
 

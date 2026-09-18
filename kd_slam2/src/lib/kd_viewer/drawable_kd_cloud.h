@@ -10,8 +10,9 @@ namespace kd_slam {
 
   struct DrawableKDCloud : public DrawableBase {
     DrawableKDCloud(const Eigen::Isometry3f& pose,
-                    const std::vector<Eigen::Vector3f>& leaves);
-
+                    const std::vector<PointNormal3fKDCloudVBO::PointType>& leaves);
+    void updateBuffer(const Eigen::Isometry3f& pose,
+                const std::vector<PointNormal3fKDCloudVBO::PointType>& leaves_);
     static void initShaders();
     void update() override {}
     void draw(const Eigen::Matrix4f& projection,
@@ -24,7 +25,8 @@ namespace kd_slam {
     static std::shared_ptr<CameraPoseVBO> _camera_pose_vbo;
     bool show_camera = true;
     bool show_cloud  = true;
-    bool taint       = false;
+    // horrible but functional
+    std::vector<PointNormal3fKDCloudVBO::PointType> leaves;
   };
 
   using DrawableKDCloudPtr = std::shared_ptr<DrawableKDCloud>;

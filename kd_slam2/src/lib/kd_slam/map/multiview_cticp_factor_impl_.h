@@ -34,7 +34,8 @@ namespace kd_slam {
       cticp->buildQuadraticFormDual();
 
       auto& m          = cticp->stats;
-      _enabled         = m.inlierRatio() > kd_factor->disable_inlier_ratio;
+      
+      _enabled         = m.hitRatio() > kd_factor->disable_hit_ratio;
       kd_factor->is_enabled = _enabled;
       _stats.chi       = m.chi2;
       _measurement_dim = m.num_inliers;

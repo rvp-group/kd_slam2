@@ -4,7 +4,7 @@
 
 # --- User-editable -----------------------------------------------------------
 unset KD_SLAM_ROS_WORKSPACE KD_SLAM_TEST
-export KD_SLAM_ROS_WORKSPACE=$HOME/ws
+export KD_SLAM_ROS_WORKSPACE=$HOME/workspaces/srrg2_ros2
 export KD_SLAM_TEST=$HOME/kd_slam
 # -----------------------------------------------------------------------------
 

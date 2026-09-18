@@ -59,17 +59,19 @@ namespace kd_slam {
 
     template <typename Node_>
     void MapOwner_<Node_>::pushFrameEvents() {
+      using VectorType=typename Node_::VectorType;
       for (auto& [ref, base_frame] : _map->frames()) {
         auto frame = std::dynamic_pointer_cast<Frame>(base_frame);
         if (!frame || !frame->tree) continue;
-        auto leaves = frame->tree->extractCompressedLeaves(frame->velocity);
+        auto vpoints = frame->tree->extractVPoints(frame->velocity);
         pushEvent(std::make_shared<EventFrameAdded>(
                                                     frame->ts,
                                                     frame->frame_count,
                                                     -1,
                                                     frame->pose_in_world,
-                                                    leaves,
-                                                    FrameAddedCloud));
+                                                    vpoints,
+                                                    FrameAddedCloud,
+                                                    VectorType::Zero()));
         ICPStats empty{};
         pushEvent(std::make_shared<EventKeyframeAdded>(
                                                        frame->ts,

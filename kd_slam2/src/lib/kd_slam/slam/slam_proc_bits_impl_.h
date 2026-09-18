@@ -48,18 +48,21 @@ namespace kd_slam {
                                             param_relocalize_min_score.value(),
                                             -1,
                                             param_relocalize_max_hops.value(),
-                                            param_relocalize_slack.value()};
+                                            param_relocalize_slack.value(),
+                                            param_relocalize_min_coverage.value()};
       _slam_params.loop_thresholds       = {param_loop_max_chi2.value(),
                                             param_loop_min_inliers_ratio.value(),
                                             param_loop_min_score.value(),
                                             param_loop_min_hops.value(),
                                             -1,
-                                            param_loop_slack.value()};
+                                            param_loop_slack.value(),
+                                            param_loop_min_coverage.value()};
       _slam_params.factor_thresholds     = {param_factor_max_chi2.value(),
                                             param_factor_min_inliers_ratio.value(),
                                             param_factor_min_score.value(),
                                             -1, -1,
-                                            param_factor_slack.value()};
+                                            param_factor_slack.value(),
+                                            -1};
       _slam_params.loop_max_orientation_rad             = param_loop_max_orientation_deg.value() * float(M_PI / 180.);
       _slam_params.loop_consensus_max_orientation_rad   = param_loop_consensus_max_orientation_deg.value() * float(M_PI / 180.);
       _slam_params.loop_consensus_max_translation       = param_loop_consensus_max_translation.value();
@@ -87,28 +90,6 @@ namespace kd_slam {
           continue;
         candidates[ref] = m;
         allowed_refs.push_back(ref);
-      }
-    }
-
-    template <typename T_>
-    void SLAMProc_<T_>::addGravityPrior(const Eigen::Vector3f& gravity_dir, float info) {
-      if constexpr (NodeType::Dim == 3) {
-        if (!_keyframe) return;
-        const Eigen::Matrix<Scalar, 3, 1> g_slam = gravity_dir.template cast<Scalar>();
-        auto gprior = std::make_shared<SolverGravityPriorFactorType>();
-        gprior->setVariableId(0, _keyframe->ref());
-        gprior->setMeasurement(g_slam);
-        gprior->setInformationMatrix(
-          SolverGravityPriorFactorType::InformationMatrixType::Identity() * info);
-        factorGraph()->addFactor(gprior);
-        if (info == 0.f) {
-          gprior->setEnabled(false);
-        } else {
-          gprior->compute(true, true);
-          _pending_chi2 += gprior->stats().chi;
-        }
-        _keyframe->solver_gravity_prior = gprior.get();
-        _need_optimize = true;
       }
     }
     

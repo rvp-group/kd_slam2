@@ -22,6 +22,7 @@ namespace kd_slam {
     using PointType  = typename KDTreeBase::PointType;
     using VectorType = typename KDTreeBase::VectorType;
     using Scalar     = typename KDTreeBase::Scalar;
+    using VPoint     = typename KDTreeBase::VPoint;
     static constexpr int Dim = KDTreeBase::Dim;
     using MatrixType  =Eigen::Matrix<Scalar, Dim, Dim>;
     using IsometryType = typename KDTreeBase::IsometryType;
@@ -53,8 +54,7 @@ namespace kd_slam {
 
     void copyNodes(Tree_<NodeType>& other) const override;
 
-    std::vector<VectorType> extractCompressedLeaves() const override;
-    std::vector<VectorType> extractCompressedLeaves(const VelocityVectorType& v) const override;
+    std::vector<VPoint> extractVPoints(const VelocityVectorType& v) const override;
 
   
     /**constructs a tree from an array of points based on the policy*/

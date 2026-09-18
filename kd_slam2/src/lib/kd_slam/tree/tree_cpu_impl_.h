@@ -158,38 +158,27 @@ namespace kd_slam {
   }
 
   template <typename KDTreeBase_>
-  std::vector<typename KDTreeBase_::VectorType>
-  TreeCPU_<KDTreeBase_>::extractCompressedLeaves() const {
-    std::vector<VectorType> ret;
-    ret.reserve(_num_leaves*2);
+  std::vector<typename KDTreeBase_::VPoint>
+  TreeCPU_<KDTreeBase_>::extractVPoints(const VelocityVectorType& v) const {
+    std::vector<VPoint> ret;
+    ret.reserve(_num_leaves);
+    bool use_vel = (v!=VelocityVectorType::Zero());
     for (size_t i=0; i<_num_leaves; ++i) {
       const auto idx=_leaves_indices_ptr[i];
       if (idx>=_num_nodes)
         throw std::runtime_error("leaves indices out of bounds");
-      const auto& n=_nodes_ptr[idx];
-      ret.push_back(n._mean);
-      ret.push_back(n._direction);
+      auto n=  use_vel ? _nodes_ptr[idx].applyVelocities(v) : _nodes_ptr[idx];
+      VPoint vp={n._mean, n._direction, {0,0,0,0}};
+      ret.push_back(vp);
     }
     return ret;
   }
 
 
-  template <typename KDTreeBase_>
-  std::vector<typename KDTreeBase_::VectorType>
-  TreeCPU_<KDTreeBase_>::extractCompressedLeaves(const VelocityVectorType& v) const {
-    std::vector<VectorType> ret;
-    ret.reserve(_num_leaves*2);
-    for (size_t i=0; i<_num_leaves; ++i) {
-      const auto idx=_leaves_indices_ptr[i];
-      if (idx>=_num_nodes)
-        throw std::runtime_error("leaves indices out of bounds");
-      const auto n=_nodes_ptr[idx].applyVelocities(v);
-      ret.push_back(n._mean);
-      ret.push_back(n._direction);
-    }
-    return ret;
-  }
 
+
+  /*************************************/
+  
   template <typename KDTreeBase_>
   void TreeCPU_<KDTreeBase_>::applyVelocitiesInPlace(const VelocityVectorType& v, bool skip_leaves) {
     for (size_t i = 0; i < _num_nodes; ++i) {

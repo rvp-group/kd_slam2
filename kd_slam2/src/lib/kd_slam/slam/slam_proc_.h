@@ -2,7 +2,6 @@
 #include "kd_slam/map/frame_match_.h"
 #include "../optimizer/optimizer_proc_.h"
 #include "../tracker/tracker_proc_.h"
-#include "gravity_prior_host_.h"
 
 namespace kd_slam {
   namespace slam {
@@ -13,7 +12,7 @@ namespace kd_slam {
     using namespace kd_slam::map;
 
     template <typename T_>
-    struct SLAMProc_ : public T_, public IGravityPriorHost {
+    struct SLAMProc_ : public T_ {
 
       using BaseType = T_;
       using MapType  = typename BaseType::MapType;
@@ -39,7 +38,6 @@ namespace kd_slam {
       using typename BaseType::SolverPGOFactorType;
       using typename BaseType::SolverVelocityVariableType;
       using typename BaseType::SolverVelocityPriorFactorType;
-      using typename BaseType::SolverGravityPriorFactorType;
       using typename BaseType::PGOFactor;
       using typename BaseType::PGOFactorPtr;
       using typename BaseType::ICPType;
@@ -92,7 +90,6 @@ namespace kd_slam {
       using BaseType::_t_align;
       void addFrame(const FrameTreePtr& src) override;
       void reset()        override;
-      void addGravityPrior(const Eigen::Vector3f& gravity_dir, float info) override;
       bool canCompute()   const override;
       bool checkCompute() const override;
       bool isGPU()        const override;
@@ -105,6 +102,8 @@ namespace kd_slam {
       PARAM(srrg2_core::PropertyFloat, relocalize_min_inliers_ratio, "min inlier ratio to accept relocalization",      0.7f, &_param_changed);
       PARAM(srrg2_core::PropertyFloat, relocalize_min_score,         "min relocalization score",                       40.f, &_param_changed);
       PARAM(srrg2_core::PropertyFloat, relocalize_slack,             "covariance slack for chi2 test",                 1.0f, &_param_changed);
+      PARAM(srrg2_core::PropertyFloat, relocalize_min_coverage,      "min coverage to relocalize onto an existing kf", 0.0, &_param_changed);
+      
       PARAM(srrg2_core::PropertyFloat, loop_max_chi2,                "max chi2 for loop closure candidate",           100.f, &_param_changed);
       PARAM(srrg2_core::PropertyInt,   loop_min_hops,                "min BFS hops to consider loop closure",          40,   &_param_changed);
       PARAM(srrg2_core::PropertyFloat, loop_consensus_max_orientation_deg,     "max orientation in the descriptor consensus [deg]",              10.f, &_param_changed);
@@ -113,6 +112,8 @@ namespace kd_slam {
       PARAM(srrg2_core::PropertyFloat, loop_min_inliers_ratio,       "min inlier ratio for loop closure",              0.7f, &_param_changed);
       PARAM(srrg2_core::PropertyFloat, loop_min_score,               "min score for loop closure",                     40.f, &_param_changed);
       PARAM(srrg2_core::PropertyFloat, loop_slack,                   "covariance slack for loop chi2 test",            1.0f, &_param_changed);
+      PARAM(srrg2_core::PropertyFloat, loop_min_coverage,            "min coverage between floating frame and match kf",                     0.5, &_param_changed);
+      
       PARAM(srrg2_core::PropertyFloat, factor_max_chi2,              "max chi2 for factor creation",                  100.f, &_param_changed);
       PARAM(srrg2_core::PropertyFloat, factor_min_inliers_ratio,     "min inlier ratio for factor creation",           0.3f, &_param_changed);
       PARAM(srrg2_core::PropertyFloat, factor_min_score,             "min score for factor creation",                  0.1f, &_param_changed);

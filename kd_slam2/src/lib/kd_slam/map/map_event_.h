@@ -31,12 +31,14 @@ namespace kd_slam {
       using IsometryType = typename NodeType_::IsometryType;
       using TreeBaseType = Tree_<NodeType>;
       using TreeBasePtr  = std::shared_ptr<TreeBaseType>;
+      using VPoint       = typename TreeBaseType::VPoint;
       EventFrameAdded_(double ts_,
                        int count_,
                        int kf_ref_,
                        const typename NodeType::IsometryType& pose_in_kf_,
-                       const std::vector<typename NodeType::VectorType>& compressed_leaves_,
+                       const std::vector<VPoint>& vpoints_,
                        FrameAddedReason reason_,
+                       VectorType eigenvalues_,
                        const std::string& topic_ = {},
                        uint64_t bag_offset_ = 0,
                        uint64_t stamp_ns_ = 0):
@@ -44,16 +46,18 @@ namespace kd_slam {
         kf_ref(kf_ref_),
         count(count_),
         pose_in_kf(pose_in_kf_),
-        compressed_leaves(compressed_leaves_),
+        vpoints(vpoints_),
         reason(reason_),
+        eigenvalues(eigenvalues_),
         topic(topic_),
         bag_offset(bag_offset_),
         stamp_ns(stamp_ns_){}
       int kf_ref;
       int count;
       IsometryType pose_in_kf;
-      std::vector<VectorType> compressed_leaves;
+      std::vector<VPoint> vpoints;
       FrameAddedReason reason;
+      VectorType eigenvalues;
       std::string topic;
       uint64_t bag_offset = 0;
       uint64_t stamp_ns = 0;
@@ -61,7 +65,8 @@ namespace kd_slam {
         using namespace std;
         os << "\r[FRAME]: #" << fixed << setprecision(3) << this->ts
            << " #" << count
-           << " kf_ref: " << kf_ref;
+           << " kf_ref: " << kf_ref
+           << " ev [" << eigenvalues.transpose() << "]";
       }
       
       virtual TreeBasePtr getTree() { return _tree; }
@@ -114,21 +119,28 @@ namespace kd_slam {
       EventOdometry_(double ts_,
                      const IsometryType& pose_in_kf_,
                      const IsometryType& pose_global_,
-                     const ICPStats& stats_):
+                     const ICPStats& stats_,
+                     const Scalar coverage_,
+                     const std::vector<ICPStats>& moving_stats_=std::vector<ICPStats>()):
         Event_<NodeType_>(ts_),
         pose_in_kf(pose_in_kf_),
         pose_global(pose_global_),
-        stats(stats_){}
+        stats(stats_),
+        coverage(coverage_),
+        moving_stats(moving_stats_){}
+      
       IsometryType pose_in_kf;
       IsometryType pose_global;
       ICPStats stats;
+      Scalar   coverage;
+      std::vector<ICPStats> moving_stats;
       void print(std::ostream& os) const override {
         using namespace std;
         os << " | ODOM:" << fixed << setprecision(3)
            << " PiK: " << pose_in_kf.translation().transpose()
            << " PiW: " << pose_global.translation().transpose()
            << " inl: " << stats.inlierRatio()
-           << " (" << fixed << setprecision(1) << stats.inlierRatio() * 100.f << "%)"
+           << " cvr: " << coverage
            << " chik: " << stats.chi2_kernelized;
 
       }
@@ -165,7 +177,8 @@ namespace kd_slam {
       double       t_rel   = 0;
       double       t_opt   = 0;
       double       pending_chi = 0;
-      EventFrameProcessed_(KDStatus st, double ta, double tp, double tl, double tr, double to=0, double pchi=0):
+      EventFrameProcessed_(KDStatus st, double ta, double tp, double tl, double tr, double to=0, double pchi=0, double ts_=0):
+        Event_<NodeType_>(ts_),
         status(st),
         t_align(ta),
         t_prop(tp),
@@ -176,7 +189,8 @@ namespace kd_slam {
 
       void print(std::ostream& os) const override {
         using namespace std;
-        os << " " << KDStatusStr[status]
+        os << " ts:" << fixed << setprecision(3) << this->ts
+           << " " << KDStatusStr[status]
            << " ta:" << setprecision(1) << t_align
            << " tp:" << t_prop
            << " tl:" << t_loop

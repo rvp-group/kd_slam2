@@ -56,7 +56,7 @@ namespace kd_slam {
 
       PARAM(srrg2_core::PropertyFloat, ba_range,
             "range for multiview icp [m]",           10.f,  &_param_changed);
-      PARAM(srrg2_core::PropertyFloat, ba_disable_inlier_ratio,
+      PARAM(srrg2_core::PropertyFloat, ba_disable_hit_ratio,
             "factors disabled if overlap below this", 0.3f,  &_param_changed);
       PARAM(srrg2_core::PropertyConfigurable_<AlignerBase>, multi_icp_aligner,
             "multiview icp aligner",    nullptr, &_param_changed);

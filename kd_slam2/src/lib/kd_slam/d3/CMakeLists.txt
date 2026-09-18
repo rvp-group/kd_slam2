@@ -15,7 +15,6 @@ target_link_libraries(kd_slam_scanner_3d kd_slam_icp_3d)
 add_library(kd_slam_slam_3d
             SHARED
             slam.cpp
-            slam_gravity_prior_factor.cpp
             instances_cpu.cpp)
 
 target_link_libraries(kd_slam_slam_3d

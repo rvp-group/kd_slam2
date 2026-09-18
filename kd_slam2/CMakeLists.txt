@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 option(HAVE_CUDA "Build with cuda support" ON)
+option(BUILD_TESTS "Build test executables" OFF)
 
 project(kd_slam2 LANGUAGES C CXX)
 
@@ -29,8 +30,6 @@ set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(srrg2_core REQUIRED)
 find_package(srrg2_solver REQUIRED)
 find_package(kd_slam2_msgs REQUIRED)
-
-set(BUILD_TESTS off)
 
 message("${PROJECT_NAME} | CXX flags: ${CMAKE_CXX_FLAGS}")
 
@@ -97,11 +96,9 @@ install(
   kd_viewer
   kd_slam
   kd_bundler
-  kd_localizer
   kd_converter
-  kd_livox_converter
   kd_map_replay
-  imu_replay
+  imu_filter_test
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin

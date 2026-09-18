@@ -53,7 +53,7 @@ namespace kd_slam {
         return;
       BaseType::syncParams();
       _ba_params.ba_range               = param_ba_range.value();
-      _ba_params.ba_disable_inlier_ratio = param_ba_disable_inlier_ratio.value();
+      _ba_params.ba_disable_hit_ratio = param_ba_disable_hit_ratio.value();
       _multi_icp_aligner   = std::dynamic_pointer_cast<ICPType>(param_multi_icp_aligner.value());
       _multi_cticp_aligner = std::dynamic_pointer_cast<CTICPType>(param_multi_cticp_aligner.value());
       _ba_params.cure_thresholds.min_score=param_cure_min_score.value();

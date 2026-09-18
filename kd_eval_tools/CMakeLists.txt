@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.8)
 project(kd_eval_tools LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_BUILD_TYPE Release)
 
 find_package(ament_cmake REQUIRED)
 find_package(Eigen3 REQUIRED)
@@ -9,6 +10,7 @@ find_package(rclcpp REQUIRED)
 find_package(rosbag2_cpp REQUIRED)
 find_package(rosbag2_storage REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
 
 # ---------- eval library (ported from vbr_bench) ----------
 add_library(eval_lib
@@ -37,7 +39,15 @@ target_link_libraries(kitti_tum2poses Eigen3::Eigen)
 add_executable(traj_compare src/traj_compare.cpp)
 target_link_libraries(traj_compare eval_lib)
 
-install(TARGETS kitti2ros2bag kitti_gt2tum kitti_tum2poses traj_compare
+# ---------- traj_intcompare ----------
+add_executable(traj_intcompare src/traj_intcompare.cpp)
+target_link_libraries(traj_intcompare eval_lib)
+
+# ---------- odom2tum ----------
+add_executable(odom2tum src/odom2tum.cpp)
+ament_target_dependencies(odom2tum rclcpp nav_msgs)
+
+install(TARGETS kitti2ros2bag kitti_gt2tum kitti_tum2poses traj_compare traj_intcompare odom2tum
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 

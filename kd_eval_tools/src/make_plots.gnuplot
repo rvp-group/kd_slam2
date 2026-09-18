@@ -13,6 +13,12 @@ plot err_filename using  1:4 w l title 'rpe-r[deg]'
 set output rpe_t_plot
 plot err_filename using  1:5 w l title 'rpe-t[m]'
 
+set output le_r_plot
+plot err_filename using  1:6 w l title 'le-r[deg/m]'
+
+set output le_t_plot
+plot err_filename using  1:7 w l title 'le-t[m/m]'
+
 unset xlabel
 set output traj_xy_plot
 set size ratio -1

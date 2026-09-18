@@ -28,7 +28,8 @@ static int run(PropertyContainerManager& manager,
                ArgumentString& a_input_map,
                ArgumentString& a_output_map,
                ArgumentFlag&   a_bundle,
-               ArgumentFlag&   a_ct_bundle) {
+               ArgumentFlag&   a_ct_bundle,
+               ArgumentInt&    a_rounds) {
   using namespace std;
   using ProcType   = typename AppTraits::ProcType;
   using NodeType   = typename AppTraits::NodeType;
@@ -65,8 +66,16 @@ static int run(PropertyContainerManager& manager,
   auto proc_loop = [&]() {
     auto m = loadMap<NodeType>(a_input_map.value(), proc->isGPU());
     proc->setMap(m);
-    if (a_bundle.isSet())    proc->bundle();
-    if (a_ct_bundle.isSet()) proc->bundleCT();
+    int rounds=1;
+    if (a_rounds.isSet())
+      rounds=a_rounds.value();
+    for (int i=0; i<rounds; ++i)
+      if (a_bundle.isSet())
+        proc->bundle();
+    
+    for (int i=0; i<rounds; ++i)
+      if (a_ct_bundle.isSet())
+        proc->bundleCT();
   };
 
   runner.run(proc, nullptr, proc_loop);
@@ -84,7 +93,8 @@ int main(int argc, char** argv) {
   ArgumentString a_input_map (&cmd, "im", "input-map",  "input map file (.kd)",          "");
   ArgumentString a_output_map(&cmd, "om", "output-map", "output map filename",           "");
   ArgumentFlag   a_bundle    (&cmd, "b",  "bundle",     "run ICP bundle adjustment");
-  ArgumentFlag   a_ct_bundle (&cmd, "cb", "ct-bundle",  "run CT-ICP bundle adjustment");
+  ArgumentFlag   a_ct_bundle (&cmd, "cb", "ct-bundle",  "run CT-ICP bundle adjustment"); 
+  ArgumentInt    a_rounds    (&cmd, "r", "rounds",  "run n iterations", 1); 
   cmd.parse();
 
   EventSinkType ev_sink_type = parseViewerArg(a_viewer);
@@ -95,7 +105,7 @@ int main(int argc, char** argv) {
 
   if (a_2d.isSet())
     return run<AppTraits2D>(manager,  a_proc.value(), ev_sink_type,
-                            a_input_map, a_output_map, a_bundle, a_ct_bundle);
+                            a_input_map, a_output_map, a_bundle, a_ct_bundle, a_rounds);
   return run<AppTraits3D>(manager,  a_proc.value(), ev_sink_type,
-                          a_input_map, a_output_map, a_bundle, a_ct_bundle);
+                          a_input_map, a_output_map, a_bundle, a_ct_bundle, a_rounds);
 }

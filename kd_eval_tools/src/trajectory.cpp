@@ -58,8 +58,10 @@ void Trajectory::read(std::istream& is, std::ostream& log) {
     }
     this->insert(std::make_pair(ts, iso));
   }
-  
-  log << "computing the distance set" << endl;
+  sync();
+}
+
+void Trajectory::sync() {
   double distance=0;
   _d2ts.clear();
   _ts2d.clear();
@@ -75,8 +77,6 @@ void Trajectory::read(std::istream& is, std::ostream& log) {
     inv_previous_pose=p.second.inverse();
   }
   _length=distance;
-  log << "trajectory length: " << _length << endl;
-
 }
 
 void Trajectory::write(std::ostream& os) const {
@@ -139,17 +139,29 @@ Eigen::Matrix3f skew(const Eigen::Vector3f& v) {
   return m;
 }
 
-Eigen::Transform<float, 3, Eigen::Affine> Trajectory::computeAlignment(const Trajectory& other, std::ostream& log, bool with_scaling) const {
+Eigen::Transform<float, 3, Eigen::Affine> Trajectory::computeAlignment(const Trajectory& other, std::ostream& log, bool with_scaling, double max_stretch) const {
   std::vector<Vector3f> this_t, other_t;
   this_t.reserve(this->size());
   other_t.reserve(this->size());
+  Eigen::Vector3f prev_pose;
+  double cum_distance=0;
+  bool first=true;
   for(const auto& p: (*this)) {
     double ts=p.first;
+    if (first) {
+      prev_pose=p.second.translation();
+      first=false;
+    }
     auto result=other.getPoseByStamp(ts);
     if (! result.first)
       continue;
+    cum_distance += (p.second.translation()-prev_pose).norm();
+    
     this_t.push_back(p.second.translation());
     other_t.push_back(result.second.translation());
+    if (cum_distance>max_stretch)
+      break;
+    prev_pose=p.second.translation();
   }
   log << "registering with " << this_t.size() << " poses" << endl;
   using RegMatrix=Eigen::Matrix<float,3, Eigen::Dynamic>;
@@ -229,4 +241,18 @@ Trajectory::const_iterator Trajectory::getValidSample(double ts) const {
   if (lb==end()||ub==end())
     return end();
   return lb;
+}
+
+Trajectory Trajectory::clipRange(double ts_start, double ts_end) const {
+  ts_start=std::max(begin()->first, ts_start);
+  ts_end=std::min(rbegin()->first, ts_end);
+  const auto it_start=upper_bound(ts_start);
+  const auto it_end=lower_bound(ts_end);
+  Trajectory out;
+  for (auto item=it_start; item!=it_end; ++item) {
+    out.insert(*item);
+  }
+  cerr << "out.size: " << out.size() << endl;
+  out.sync();
+  return out;
 }

@@ -1,5 +1,17 @@
 # Changelog
 
+	
+## v2.3 -- 2026-09-18
+### Algo
+- Removed legacy stuff (imu full filter, gravity prior, localizer, useless tests)
+- FlatLeafPolicy: added check for flatness on all eigenvalues
+- Voxelizer: now uses flat structures, 3x speedup
+- TreeLoader: enabled parallel tree construction. Voxelization and TreeBuilding run in parallel
+- Covariance: fixed bugs on hop propagation
+
+### Configs
+- updated parameters. you need to recompute the trees now
+
 ## v2.2 -- 2026-07-16
 
 ### Algo

@@ -12,6 +12,7 @@ namespace kd_slam {
       int    num_inliers    = 0;
       int    num_outliers   = 0;
       int    num_bad       = 0;
+      int    num_cut       = 0;
       int    num_err_normal= 0;
       int    num_err_fn    = 0;
       Scalar chi2             = 0;
@@ -21,7 +22,13 @@ namespace kd_slam {
 
       __CUDA_EXPORT_INLINE__
       int  numLeaves() const {
-        return num_inliers+num_outliers+num_bad+num_err_normal+num_err_fn;
+        return num_inliers+num_outliers+num_bad+num_cut+num_err_normal+num_err_fn;
+      }
+
+      __CUDA_EXPORT_INLINE__
+      Scalar  hitRatio() const {
+        int num_leaves=numLeaves();
+        return num_leaves ? (Scalar(num_inliers+num_outliers)/Scalar(num_leaves)) : 0.f;
       }
 
       __CUDA_EXPORT_INLINE__
@@ -35,15 +42,26 @@ namespace kd_slam {
       }
       
       __CUDA_EXPORT_INLINE__ void clear() {
-        num_inliers=0; num_outliers=0; num_bad=0; num_err_normal=0; num_err_fn=0;
-        chi2=0; chi2_kernelized=0;
+        num_inliers=0;
+        num_outliers=0;
+        num_bad=0;
+        num_cut=0;
+        num_err_normal=0;
+        num_err_fn=0;
+        chi2=0;
+        chi2_kernelized=0;
       }
 
       __CUDA_EXPORT_INLINE__
       ICPStats_& operator+=(const ICPStats_& o) {
-        num_inliers+=o.num_inliers; num_outliers+=o.num_outliers; num_bad+=o.num_bad;
-        num_err_normal+=o.num_err_normal; num_err_fn+=o.num_err_fn;
-        chi2+=o.chi2; chi2_kernelized+=o.chi2_kernelized;
+        num_inliers+=o.num_inliers;
+        num_outliers+=o.num_outliers;
+        num_bad+=o.num_bad;
+        num_cut+=o.num_cut;
+        num_err_normal+=o.num_err_normal;
+        num_err_fn+=o.num_err_fn;
+        chi2+=o.chi2;
+        chi2_kernelized+=o.chi2_kernelized;
         return *this;
       }
 
@@ -67,6 +85,7 @@ namespace kd_slam {
          << " ni: " << s.num_inliers
          << " no: " << s.num_outliers
          << " nb: " << s.num_bad
+         << " nc: " << s.num_cut
          << " nn: " << s.num_err_normal
          << " nf: " << s.num_err_fn
          << " pp: " << s.pert_pose_norm

@@ -35,6 +35,7 @@ namespace kd_slam {
       using EvLoop  = EventLoopSearch_<NodeType_>;
       using EvReloc = EventRelocalize_<NodeType_>;
       using EvFactChange = EventFactorChanged;
+      using VPoint = typename Tree_<NodeType_>::VPoint;
       
       std::mutex draw_mutex;
       std::map<int, DrawableKDCloudPtr> _frames;
@@ -71,7 +72,6 @@ namespace kd_slam {
       bool show_matches = true;
       bool show_cameras = true;
       bool show_clouds  = true;
-
       static void initShaders();
 
       DrawableKDSlam_();
@@ -162,7 +162,7 @@ namespace kd_slam {
     private:
       KDStatus _status=KDStatus::Init;
       std::list<std::shared_ptr<DrawableBase>> _pending_deletes;
-      std::vector<Eigen::Vector3f> _toVec3f(const std::vector<VectorType>& in) const;
+      std::vector<PointNormal3fKDCloudVBO::PointType> _toVec3f(const std::vector<VPoint>& in) const;
       const PaletteFrame& _getKFPalette(int ref) const;
     };
 

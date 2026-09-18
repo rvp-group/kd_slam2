@@ -36,10 +36,13 @@ struct Trajectory: public std::map<double, Isometry3f> {
   Eigen::Transform<float, 3, Eigen::Affine>
   computeAlignment(const Trajectory& other,
                    std::ostream& log,
-                   bool with_scaling=false) const;
+                   bool with_scaling=false,
+                   double max_stretch=std::numeric_limits<double>::max()) const;
 
   void applyTransform(const Eigen::Transform<float, 3, Eigen::Affine>& t);
-
+  
+  Trajectory clipRange(double ts_start, double ts_end) const;
+  
   using DoublePair=std::pair<double, double>;
   struct DoublePairCompare{
     inline bool operator()(const DoublePair& a, const DoublePair& b)  const {
@@ -48,13 +51,13 @@ struct Trajectory: public std::map<double, Isometry3f> {
   };
 
   inline const double& length() const { return _length; }
-
+  
   // returns -1 if outside
   double  distance2ts(double distance) const ;
   double  ts2distance(double ts) const;
   
   using DoublePairSet=std::set<DoublePair, DoublePairCompare>;
-  
+  void sync();
   DoublePairSet _d2ts;
   DoublePairSet _ts2d;
   double _length=0;

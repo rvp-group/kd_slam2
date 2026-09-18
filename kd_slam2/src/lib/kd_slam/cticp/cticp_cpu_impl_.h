@@ -16,6 +16,7 @@ namespace kd_slam {
     template <typename Base_>
     void CTICP_CPU_<Base_>::setMoving(const TreeBaseType& moving) {
       this->_moving = &moving;
+      moving_leaves_stats.resize(moving._num_leaves);
     }
 
     template <typename Base_>
@@ -24,7 +25,7 @@ namespace kd_slam {
     }
 
     template <typename Base_>
-    void CTICP_CPU_<Base_>::_buildQuadraticForm(bool stats_mode) {
+    void CTICP_CPU_<Base_>::_buildQuadraticForm(bool disable_outliers) {
       static constexpr int MAX_THREADS=8;
 
       using DestView     = typename Base_::DestView;
@@ -63,8 +64,9 @@ namespace kd_slam {
           const auto& moving_leaf=this->_moving->_nodes_ptr[this->_moving->_leaves_indices_ptr[i]];
           Base_::quadraticTerm(view, 0,
                                this->fixed_state, this->moving_state, this->_cache,
-                               this->_fixed->_nodes_ptr, moving_leaf, this->params, stats_mode);
+                               this->_fixed->_nodes_ptr, moving_leaf, this->params, disable_outliers);
           stats_adder.add(stats_buf);
+          moving_leaves_stats[i]=stats_buf;
           diag_pose_adder.add(diag_pose_buf);
           diag_vel_adder.add(diag_vel_buf);
           cross_adder.add(cross_buf);
@@ -126,7 +128,7 @@ namespace kd_slam {
     }
 
     template <typename Base_>
-    void CTICP_CPU_<Base_>::_buildQuadraticFormDual(bool stats_mode) {
+    void CTICP_CPU_<Base_>::_buildQuadraticFormDual(bool disable_outliers) {
       using DestViewDual      = typename Base_::DestViewDual;
       using StatsType         = typename Base_::StatsType;
       using DiagPoseType      = typename Base_::DiagPoseType;
@@ -166,7 +168,8 @@ namespace kd_slam {
         const auto& moving_leaf=this->_moving->_nodes_ptr[this->_moving->_leaves_indices_ptr[i]];
         Base_::quadraticTermDual(view, 0,
                                  this->fixed_state, this->moving_state, this->_cache,
-                                 this->_fixed->_nodes_ptr, moving_leaf, this->params, stats_mode);
+                                 this->_fixed->_nodes_ptr, moving_leaf, this->params, disable_outliers);
+        moving_leaves_stats[i]=stats_buf;
         stats_adder.add(stats_buf);
         diag_pose_adder.add(diag_pose_buf);
         diag_vel_adder.add(diag_vel_buf);

@@ -21,8 +21,9 @@ namespace kd_slam {
     const char* getHUDtext() const;
     void writeHUD(const char* fmt, ...);
     void postHUD();
-    std::list<std::string> log;
-  protected:
+    std::list<std::string> log; 
+    bool show_normals = false;
+ protected:
     mutable std::mutex draw_mutex;
     char hud_text[2][MAX_HUD_CHARS];
     char* write_hud_start=hud_text[0];

@@ -58,6 +58,7 @@ namespace kd_slam {
       cov_prop.cond_trans = _slam_params.covariance_propagate_trans_cond_diag;
       cov_prop.cond_rot   = _slam_params.covariance_propagate_rot_cond_diag;
       _keyframe->distance_from_root = 0;
+      _keyframe->hops_from_root=0;
       _map->visitBFS(_keyframe->ref(), cov_prop);
     }
 

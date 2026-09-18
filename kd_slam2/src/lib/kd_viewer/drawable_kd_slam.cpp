@@ -20,8 +20,8 @@ namespace kd_slam {
       
       registerCallback<EvAdded>([this](std::shared_ptr<EvAdded> ev) {
         std::lock_guard<std::mutex> guard(draw_mutex);
-        auto leaves3f   = _toVec3f(ev->compressed_leaves);
-        auto cloud=std::make_shared<DrawableKDCloud>(Eigen::Isometry3f::Identity(), leaves3f);
+        auto vpoints    = _toVec3f(ev->vpoints);
+        auto cloud=std::make_shared<DrawableKDCloud>(Eigen::Isometry3f::Identity(), vpoints);
         if(_current_cloud && ev->kf_ref<0) {
           //cerr << "no keyframe" << ev->count << endl;
           _frames[ev->count]=cloud;
@@ -41,6 +41,39 @@ namespace kd_slam {
         std::lock_guard<std::mutex> guard(draw_mutex);
         if (_current_cloud) {
           _current_cloud->pose_in_world = toIsometry3f(ev->pose_global);
+          if (ev->moving_stats.size()) {
+            if (_current_cloud->leaves.size()!=ev->moving_stats.size())
+              throw std::runtime_error("viewer bookeeping");
+            auto base_color=palette_ift.cloud_color;
+            uint8_t base_r=uint8_t(base_color.x()*255);
+            uint8_t base_g=uint8_t(base_color.y()*255);
+            uint8_t base_b=uint8_t(base_color.z()*255);
+            size_t size=_current_cloud->leaves.size();
+            for (size_t i=0; i<size; ++i) {
+              auto& d=_current_cloud->leaves[i];
+              const auto& s=ev->moving_stats[i];
+              auto& r=d.rgba[0];
+              auto& g=d.rgba[1];
+              auto& b=d.rgba[2];
+              auto& a=d.rgba[3];
+              // exactly one of these fires per leaf, see ICP_::quadraticTerm
+              if (s.num_bad) {
+                r=255; g=0;   b=0;
+              } else if (s.num_err_fn) {
+                r=255; g=140; b=0;
+              } else if (s.num_cut) {
+                r=255; g=100; b=0;
+              } else if (s.num_err_normal) {
+                r=0;   g=255; b=0;
+              } else if (s.num_outliers) {
+                r=255; g=220; b=0;
+              } else {
+                r=base_r; g=base_g; b=base_b;
+              }
+              a=255;
+            }
+            _current_cloud->_cloud_vbo->updateBuffer(_current_cloud->leaves);
+          }
           ostringstream os;
           ev->print(os);
           writeHUD("%s\n", os.str().c_str());
@@ -109,9 +142,10 @@ namespace kd_slam {
                << fixed << setprecision(1)
                << " chi: " << m.chi2_spatial
                << " dst: " << m.descriptor_distance
-               << " ang: " << m.rotation_delta
+               << " ang: " << m.rotation_delta*(180.f/M_PI)
                << " trs: " << m.translation_delta
                << " scr: " << m.score
+               << " cov: " << m.coverage
                << " inl: " << m.inlier_ratio * 100
                << " res: " << MatchLabelResultStr[m.match_result]
                << ") " << endl;
@@ -208,6 +242,7 @@ namespace kd_slam {
         if (kf->_cloud_vbo) {
           kf->_cloud_vbo->point_color = _getKFPalette(ref).cloud_color;
           kf->_cloud_vbo->decimation  = cloud_decimation;
+          kf->_cloud_vbo->show_normals=show_normals;
         }
         kf->draw(projection, model_pose, object_pose, light_direction);
       }
@@ -217,8 +252,9 @@ namespace kd_slam {
         _rendered_cloud->show_cloud  = show_clouds;
         _rendered_cloud->show_camera = show_cameras;
         if (_rendered_cloud->_cloud_vbo) {
-          _rendered_cloud->_cloud_vbo->point_color = palette_ift.cloud_color;
+          _rendered_cloud->_cloud_vbo->point_color=Eigen::Vector3f(-1,-1,-1);
           _rendered_cloud->_cloud_vbo->decimation  = cloud_decimation;
+          _rendered_cloud->_cloud_vbo->show_normals=show_normals;
         }
         _rendered_cloud->draw(projection, model_pose, object_pose, light_direction);
       }
@@ -234,15 +270,24 @@ namespace kd_slam {
     }
 
     template <typename NodeType_>
-    std::vector<Eigen::Vector3f>
-    DrawableKDSlam_<NodeType_>::_toVec3f(const std::vector<VectorType>& in) const {
-      std::vector<Eigen::Vector3f> out;
+    std::vector<PointNormal3fKDCloudVBO::PointType>
+    DrawableKDSlam_<NodeType_>::_toVec3f(const std::vector<VPoint>& in) const {
+      using PointType = PointNormal3fKDCloudVBO::PointType;
+      std::vector<PointType> out;
       out.reserve(in.size());
       for (const auto& v : in) {
-        if constexpr (Dim == 3)
-          out.push_back(v.template cast<float>());
-        else
-          out.push_back(Eigen::Vector3f(float(v.x()), float(v.y()), 0.f));
+        auto m=v.point.template cast<float>();
+        auto n=v.normal.template cast<float>();
+        PointType p;
+        if constexpr (Dim == 3) {
+          p.point  = m;
+          p.normal = n;
+        } else {
+          p.point  = Eigen::Vector3f(float(m.x()), float(m.y()), 0.f);
+          p.normal = Eigen::Vector3f(float(n.x()), float(n.y()), 0.f);
+        }
+        p.rgba[0]=v.rgba[0]; p.rgba[1]=v.rgba[1]; p.rgba[2]=v.rgba[2]; p.rgba[3]=v.rgba[3];
+        out.push_back(p);
       }
       return out;
     }

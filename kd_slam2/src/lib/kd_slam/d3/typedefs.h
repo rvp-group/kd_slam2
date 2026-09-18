@@ -81,7 +81,6 @@ namespace kd_slam::d3 {
 #include "srrg_solver/variables_and_factors/types_3d/se3_pose_pose_expmap_left_error_factor_ad.h"
 #include "srrg_solver/variables_and_factors/types_common/all_types.h"
 #include "kd_slam/map/velocity_prior_factor_.h"
-#include "slam_gravity_prior_factor.h"
 
 namespace kd_slam {
   namespace map {
@@ -91,7 +90,6 @@ namespace kd_slam {
       using SolverPGOFactorType            = srrg2_solver::SE3PosePoseExpmapLeftErrorFactorAD;
       using SolverVelocityVariableType     = srrg2_solver::VariableVector6;
       using SolverVelocityPriorFactorType  = VelocityPriorFactor_<srrg2_solver::VariableVector6>;
-      using SolverGravityPriorFactorType   = GravityPriorFactor;
     };
   }
 }

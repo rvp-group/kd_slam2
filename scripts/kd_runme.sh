@@ -98,8 +98,7 @@ run_convert() {
     conf=$SLAM_CONF_DRIVE
   fi
   echo "=== seq $seq: converting ==="
-  $CONVERTER -c $conf -i $bag -o $out \
-    2>&1 | tee $BAGS/${seq}_convert.log
+  $CONVERTER -c $conf -i $bag -o $out 2>&1 | tee $BAGS/${seq}_convert.log
 }
 
 delete_map() {
@@ -161,7 +160,7 @@ run_ba() {
   fi
   delete_map $out
   echo "=== seq $seq: ICP bundle ==="
-  $LOADER -c $bconf -im $in -om $out -b \
+  $LOADER -r 3 -c $bconf -im $in -om $out -b \
     2>&1 | tee ${RESULTS}/$seq/${seq}_${VARIANT}_ba.log
 }
 

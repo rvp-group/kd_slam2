@@ -29,7 +29,6 @@ namespace kd_slam {
       using SolverPGOFactorType           = typename MapType::SolverPGOFactorType;
       using SolverVelocityVariableType    = typename MapType::SolverVelocityVariableType;
       using SolverVelocityPriorFactorType = typename MapType::SolverVelocityPriorFactorType;
-      using SolverGravityPriorFactorType  = typename MapType::SolverGravityPriorFactorType;
       using PGOFactor                     = typename MapType::PGOFactor;
       using PGOFactorPtr                  = typename MapType::PGOFactorPtr;
       using MultiViewICPFactor            = typename MapType::MultiViewICPFactor;
@@ -83,8 +82,6 @@ namespace kd_slam {
             "when to trigger pgo",             0.1f,  &_param_changed);
       PARAM(srrg2_core::PropertyFloat, velocity_prior_info,
             "prior for velocity from cticp",   1000,  &_param_changed);
-      PARAM(srrg2_core::PropertyFloat, imu_gravity_prior_info,
-            "prior for gravity info from imu", 1000,  &_param_changed);
 
     protected:
       using SolverActionType    = OptimizerSolverAction_<OptimizerProc_<T_>>;

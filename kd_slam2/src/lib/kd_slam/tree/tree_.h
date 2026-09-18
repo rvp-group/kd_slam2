@@ -40,10 +40,14 @@ namespace kd_slam {
     inline size_t numNodes() const {return _num_nodes;}
 
     virtual void copyNodes(Tree_<NodeType>& other) const = 0;
-  
-    virtual std::vector<VectorType> extractCompressedLeaves() const = 0;
-    virtual std::vector<VectorType> extractCompressedLeaves(const VelocityVectorType& v) const = 0;
-  
+    
+    struct VPoint{
+      VectorType point;
+      VectorType normal;
+      uint8_t    rgba[4];
+    };
+    virtual std::vector<VPoint> extractVPoints(const VelocityVectorType& = VelocityVectorType::Zero()) const = 0;
+
     // Manipulates the tree and suppresses all nodes
     // for which the predicate is NOT true
     // the structure is changed.

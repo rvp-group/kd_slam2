@@ -62,7 +62,6 @@ RUN . /opt/ros/jazzy/setup.sh && \
     colcon build --cmake-args -DEIGEN3_INCLUDE_DIR=/usr/include/eigen3 && \
     rm -rf /ws/src /ws/build /tmp/repos.yml
 
-ARG BLAST_CACHE=1
 # -------------------------------------------------------------------
 FROM srrg AS cpu
 
@@ -78,13 +77,11 @@ RUN echo "source /opt/ros/jazzy/setup.bash" >> /etc/bash.bashrc && \
 WORKDIR /
 
 # -------------------------------------------------------------------
-FROM srrg AS cuda
+FROM cpu AS cuda
 
 ENV CPATH=/usr/local/cuda/include
 ENV LIBRARY_PATH=/usr/local/cuda/lib64
 
-RUN mkdir -p /ws/src && cd /ws/src && \
-    git clone https://github.com/rvp-group/kd_slam2.git
 WORKDIR /ws
 RUN . /opt/ros/jazzy/setup.sh && \
     . /ws/install/local_setup.sh && \

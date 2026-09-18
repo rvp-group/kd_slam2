@@ -26,6 +26,7 @@ namespace kd_slam {
       IsometryType     pose          = IsometryType::Identity();
       Scalar           inlier_ratio  = 0;
       Scalar           score         = 0;
+      Scalar           coverage      = 0;
       Scalar           chi2_spatial  = std::numeric_limits<Scalar>::max();
       Scalar           desc_distance = -1;
       int              hops          = 0;

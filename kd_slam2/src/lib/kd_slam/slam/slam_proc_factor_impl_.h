@@ -31,6 +31,7 @@ namespace kd_slam {
       f.det_from_to   = f.omega_from_to.determinant();
       f.det_to_from   = f.omega_to_from.determinant();
       f.stats         = match.stats;
+      f.coverage      = match.coverage;
       f.type          = ft;
       return std::make_shared<PGOFactor>(f);
     }

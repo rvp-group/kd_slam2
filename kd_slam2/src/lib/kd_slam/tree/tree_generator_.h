@@ -16,12 +16,14 @@ namespace kd_slam {
     using PointsVectorType = typename TreeType::PointsVectorType;
 
     PARAM(srrg2_core::PropertyBool,  propagate_normal,          "propagate normal from parent to children if flat enough", false, &_params_changed);
+    PARAM(srrg2_core::PropertyInt,   tree_parallel_level,       "max tree depth to fork parallel construction (-1 = disabled)", -1, &_params_changed);
     PARAM(srrg2_core::PropertyInt,   tree_min_good_leaves,      "min good leaves to accept a tree",                       10,    &_params_changed);
     PARAM(srrg2_core::PropertyInt,   leaf_min_points,           "min points in leaf",                                     5,     &_params_changed);
     PARAM(srrg2_core::PropertyInt,   leaf_max_points,           "max points in leaf",                                     30,    &_params_changed);
     PARAM(srrg2_core::PropertyFloat, leaf_density,              "density of points in leaf [pts/m, m^2]",                 100.f, &_params_changed);
     PARAM(srrg2_core::PropertyFloat, leaf_min_normal_incidence, "min cos of incidence angle",                             0.1f,  &_params_changed);
-    PARAM(srrg2_core::PropertyFloat, leaf_eigenvalue_threshold, "lambda_max below this: leaf discarded",                  1e-3f, &_params_changed);
+    PARAM(srrg2_core::PropertyFloat, leaf_low_eigenvalue_threshold, "lambda_min above this: leaf discarded",                  1e-3f, &_params_changed);
+    PARAM(srrg2_core::PropertyFloat, leaf_high_eigenvalue_threshold, "lambda_non-min below this: leaf discarded",                  1e-2f, &_params_changed);
     PARAM(srrg2_core::PropertyFloat, leaf_normal_eigenratio,    "below this the leaf is not flat enough",                 1e-1f, &_params_changed);
 
     FlatLeafPolicy_<NodeType>      policy;
@@ -31,11 +33,13 @@ namespace kd_slam {
       if (!_params_changed)
         return;
       policy.propagate_normal     = param_propagate_normal.value();
+      policy.parallel_level       = param_tree_parallel_level.value();
       policy.min_points           = param_leaf_min_points.value();
       policy.max_points           = param_leaf_max_points.value();
       policy.leaf_density         = param_leaf_density.value();
       policy.min_normal_incidence = param_leaf_min_normal_incidence.value();
-      policy.eigenvalue_threshold = param_leaf_eigenvalue_threshold.value();
+      policy.low_eigenvalue_threshold = param_leaf_low_eigenvalue_threshold.value();
+      policy.high_eigenvalue_threshold = param_leaf_high_eigenvalue_threshold.value();
       policy.normal_eigenratio    = param_leaf_normal_eigenratio.value();
       _params_changed = false;
     }

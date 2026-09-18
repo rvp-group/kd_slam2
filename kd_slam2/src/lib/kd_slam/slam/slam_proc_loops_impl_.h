@@ -86,23 +86,30 @@ namespace kd_slam {
         
         if (best_angle > _slam_params.loop_consensus_max_orientation_rad
             || best_translation > _slam_params.loop_consensus_max_translation) {
+          loop_match.match_result=MatchLoopConsensusFail;
           continue;
         }
-        loop_match.match_result=MatchLoopConsensusFail;
         ++stat_loop_desc2kf;
       
         // --- check against graph estimate ---
         Scalar angle_graph = std::abs(GeometryTraits::angleFromRotation(T_desc_mkf_ckf_A.linear().transpose()*cand.pose.linear()));
         if (angle_graph > _slam_params.loop_max_orientation_rad) {
           loop_match.match_result=MatchLoopGraphFail;
+          continue;
         }
         // icp 1: floating w.r.t match_kf
         Match float_match(match_kf, _floating_frame, T_desc_mkf_curr);
         float_match.rematch(aligner, _slam_params.loop_thresholds, KDFactorType::Loop);
-        if (float_match.result!=MatchOk)
+        // std::cerr << "FL| ";
+        // float_match.print(std::cerr);
+        // std::cerr << endl;
+        if (float_match.result!=MatchOk) {
+          loop_match.match_result=MatchLoopICPFloatFail;
+          loop_match.score=float_match.score;
+          loop_match.coverage=float_match.coverage;
+          loop_match.inlier_ratio=float_match.inlier_ratio;
           continue;
-        
-
+        }
         // --- single ICP: _keyframe (moving) vs matchKF (fixed) ---
         Match kf_match(_keyframe, match_kf, _pose_in_kf*float_match.pose.inverse());
         kf_match.desc_distance = dm.dist_match;
@@ -112,13 +119,22 @@ namespace kd_slam {
 
         loop_match.inlier_ratio=kf_match.inlier_ratio;
         loop_match.score=kf_match.score;
+        loop_match.coverage=kf_match.coverage;
         loop_match.match_result=kf_match.result;
         // cerr << "loop match  " << MatchLabelResultStr[kf_match.result]
         //      << " inlier_ratio: " << kf_match.inlier_ratio
         //      << " inlier_t:    " << _slam_params.loop_thresholds.min_inlier_ratio
         //      << " score: " << kf_match.score 
         //      << " score_t: " << _slam_params.loop_thresholds.min_score << endl;
+        // std::cerr << "KF| ";
+        // kf_match.print(std::cerr);
+        // std::cerr << endl;
+
         if (kf_match.result != MatchOk) { //TODO use relaxed thresholds and add a further consensus
+          loop_match.match_result=MatchLoopICPKFFail;
+          loop_match.score=kf_match.score;
+          loop_match.coverage=kf_match.coverage;
+          loop_match.inlier_ratio=kf_match.inlier_ratio;
           continue;
         }
         ++stat_loop_ICP_OK;
@@ -131,10 +147,13 @@ namespace kd_slam {
       if (best.result != MatchOk) 
         return nullptr;
       
+      
+      if (_map->areConnected(_keyframe->ref(), best.moving_frame->ref())) { 
+        //cerr << "illegal closure: " << _keyframe->ref() << " - " << best.moving_frame->ref() << " hops: " << best.moving_frame->hops_from_root << endl;
+        return nullptr;
+      }
+      //cerr << "adding closure: " << _keyframe->ref() << " - " << best.moving_frame->ref() << " hops: " << best.moving_frame->hops_from_root << endl;
       auto f_ptr = makeFactor(best, Loop);
-
-      if (_map->areConnected(_keyframe->ref(), best.fixed_frame->ref()))
-        return f_ptr;
 
       addFactor(f_ptr);
       return f_ptr;

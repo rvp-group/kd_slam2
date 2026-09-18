@@ -29,10 +29,11 @@ struct FlatLeafPolicy_: public CountLeafPolicy_<Node_> {
   };
 
   bool propagate_normal=false;
-  Scalar leaf_density=100;
+  Scalar leaf_density=1000;
   Scalar min_points=5; // if less than these bad leaf
   Scalar min_normal_incidence=0.1; //if incidence below this treshold the normal is not well defined (bad leaf)
-  Scalar eigenvalue_threshold=1e-3; //if the max eigenval of covariance below this, bad leaf
+  Scalar low_eigenvalue_threshold=1e-3; //if the  min eigenval of covariance above this, bad leaf
+  Scalar high_eigenvalue_threshold=1e-2; 
   Scalar normal_eigenratio=1e-1; // if lambda_min/lambda_max above this the covariance is not flat enough. If size()>min_points it becomes a node
   
   inline bool propagateNormal(NodeType& node,
@@ -68,13 +69,22 @@ struct FlatLeafPolicy_: public CountLeafPolicy_<Node_> {
       return;
     }
     
-    const Scalar lambda_max=metadata.eigenvalues(Dim-1);
     const Scalar lambda_min=metadata.eigenvalues(0);
+    const Scalar lambda_max=metadata.eigenvalues(1);
     const Scalar eigenratio=lambda_min/lambda_max;
 
-    metadata.is_flat = eigenratio<normal_eigenratio
+    bool good_eigenvalues=true;
+    for (int i=1; i<Dim; ++i) {
+      if (metadata.eigenvalues(i)<high_eigenvalue_threshold) {
+        good_eigenvalues=false;
+        break;
+      }
+    }
+    metadata.is_flat = good_eigenvalues
+      && lambda_min<low_eigenvalue_threshold
+      && eigenratio<normal_eigenratio
       && fabs(node._mean.dot(metadata.normal()))>min_normal_incidence;
-
+    
     // if flat set the (local) normal for propagagtion
     if (metadata.is_flat) {
       metadata.has_propagated_normal=true;
@@ -88,7 +98,7 @@ struct FlatLeafPolicy_: public CountLeafPolicy_<Node_> {
     // if sparse, we turn the leaf in a node
     Scalar volume=Scalar(1.);
     for (int i=1; i<Dim; ++i)
-      volume*=metadata.eigenvalues(i);
+      volume*=sqrt(metadata.eigenvalues(i));
     Scalar density=metadata.n_points/volume;
 
     if (density<leaf_density) {

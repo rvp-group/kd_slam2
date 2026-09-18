@@ -8,15 +8,15 @@ int main(int argc, char** argv) {
     return 1;
   }
   const std::string output_path = (argc > 3) ? argv[3] : ".";
-
-  Eigen::Vector2f ate, rpe;
-  bool ok = eval(ate, rpe,
-                 argv[1], argv[2], output_path,
-                 std::cerr,
-                 true,   // disable gnuplot benchmark
-                 true);  // interpolate
+  TrajectoryEvaluator evaluator;
+  bool ok = evaluator.init(argv[1], argv[2], std::cerr);
+  if (! ok) {
+    cerr << "Error loading trajectories" << endl;
+  }
+  evaluator.disable_bench=true;
+  evaluator.interpolate_on=true;
+  ok=evaluator.eval(std::cerr); 
   if (!ok) return 1;
-  std::cerr << "ATE  rot(deg) trans(m): " << ate.transpose() << "\n";
-  std::cerr << "RPE  rot(deg) trans(%): " << rpe.transpose() << "\n";
+  evaluator.dump(std::cerr, output_path);
   return 0;
 }

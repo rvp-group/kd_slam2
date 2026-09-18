@@ -21,19 +21,19 @@ namespace kd_slam {
     }
 
     template <typename Traits_>
-    void ICP_<Traits_>::buildQuadraticForm(bool stats_mode) {
+    void ICP_<Traits_>::buildQuadraticForm(bool disable_outliers) {
       updateCache();
-      _buildQuadraticForm(stats_mode);
+      _buildQuadraticForm(disable_outliers);
     }
 
     
     template <typename Base_>
-    void ICP_<Base_>::buildQuadraticForm(FixedEntryBase& fixed_, bool stats_mode) {
+    void ICP_<Base_>::buildQuadraticForm(FixedEntryBase& fixed_, bool disable_outliers) {
       FixedEntry& fixed=static_cast<FixedEntry&>(fixed_);
       this->_fixed=fixed.fixed_tree;
       fixed_state=fixed.fixed_state;
       updateCache();
-      _buildQuadraticForm(stats_mode);
+      _buildQuadraticForm(disable_outliers);
       fixed.stats=this->stats;
       fixed.H=H;
       fixed.b=b;
@@ -41,8 +41,8 @@ namespace kd_slam {
 
     
     template <typename Traits_>
-    void ICP_<Traits_>::buildQuadraticFormDual(bool stats_mode) {
-      buildQuadraticForm(stats_mode);
+    void ICP_<Traits_>::buildQuadraticFormDual(bool disable_outliers) {
+      buildQuadraticForm(disable_outliers);
       // J_B = -J_A  =>  H_BB = H_AA, b_B = -b_A, J_A^T J_B = -H_AA
       H_fixed =  H;
       b_fixed = -b;
@@ -50,17 +50,17 @@ namespace kd_slam {
     }
 
     template <typename Traits_>
-    bool ICP_<Traits_>::oneRound(bool stats_mode) {
+    bool ICP_<Traits_>::oneRound(bool disable_update, bool disable_outliers) {
       using namespace std;
       if (_fixed_forest.empty()) {
-        buildQuadraticForm(stats_mode);
+        buildQuadraticForm(disable_outliers);
       } else {
         HessianType temp_H=HessianType::Zero();
         CoefficientType temp_b=CoefficientType::Zero();
         StatsType temp_stats=StatsType::Zero();
         for(auto [ref, e]: _fixed_forest) {
           FixedEntry& entry = static_cast<FixedEntry&>(*e);
-          buildQuadraticForm(entry, stats_mode);
+          buildQuadraticForm(entry, disable_outliers);
           temp_H+=entry.H;
           temp_b+=entry.b;
           temp_stats+=entry.stats;
@@ -78,10 +78,13 @@ namespace kd_slam {
         //cerr << "good: " << good_measurements << endl;
         return false;
       }
-      
-      dx=(H+HessianType::Identity()*this->params.damping).ldlt().solve(- b);
+
+      Scalar damp=this->params.damping;
+      if (disable_update)
+        damp=0;
+      dx=(H+HessianType::Identity()*damp).ldlt().solve(- b);
       this->stats.pert_pose_norm=dx.norm();
-      if (stats_mode)
+      if (disable_update)
         return true;
 
       // apply perturbation
@@ -108,27 +111,39 @@ namespace kd_slam {
                                       const ICP_<Traits_>::NodeType* fixed_nodes_ptr,
                                       const ICP_<Traits_>::NodeType& moving_leaf,
                                       const ICP_<Traits_>::ParamsType& params,
-                                      bool stats_mode) {
+                                      bool disable_outliers) {
       dest.clear(tid);
       const auto p_mif=applyIsometry_(cache.Xmf, moving_leaf._mean);
       //const auto n_mif=applyRotation_ (cache.Xmf, moving_leaf._direction);
-
       int aux_idx=0;
       while(aux_idx>=0 && !fixed_nodes_ptr[aux_idx].isLeaf()) {
         const auto& aux=fixed_nodes_ptr[aux_idx];
         aux_idx = aux.whichSide(p_mif) ? aux._idx_left : aux._idx_right;
       }
       if (aux_idx<0) { dest.stats[tid].num_bad=1; return; }
-
+      
       const auto& pf=fixed_nodes_ptr[aux_idx]._mean;
       const auto& nf=fixed_nodes_ptr[aux_idx]._direction;
 
+      // mean cut threshold
+      auto r2_m = moving_leaf._mean.squaredNorm();
+      auto r2_f = pf.squaredNorm();
+      auto r2 = sqrt(r2_m > r2_f ? r2_m : r2_f);
+      auto mean_distance_cut=params.mean_distance_min+r2*params.mean_distance_gain;
+      mean_distance_cut=params.mean_distance_max < mean_distance_cut ? params.mean_distance_max : mean_distance_cut;
+      auto mean_distance_cut2=mean_distance_cut*mean_distance_cut;
+      
       const auto p_moving=applyIsometry_(cache.Xm, moving_leaf._mean);
       const auto n_moving=applyRotation_ (cache.Xm, moving_leaf._direction);
 
       const auto p_fixed=applyIsometry_(cache.Xf, pf);
       const auto n_fixed=applyRotation_ (cache.Xf, nf);
 
+      // mean guard
+      if ((p_moving-p_fixed).squaredNorm()>mean_distance_cut2) {
+        dest.stats[tid].num_cut=1;
+        return;
+      }
       typename Traits_::Scalar e;
       typename Traits_::JacobianPoseType J;
       int result=Traits_::errorAndJacobian(e, J, p_fixed, n_fixed, p_moving, n_moving,
@@ -138,12 +153,12 @@ namespace kd_slam {
       case -2: dest.stats[tid].num_err_fn=1;     return;
       default:;
       }
-
+      Scalar k_thresh=disable_outliers?params.inlier_only_kernel_threshold:params.kernel_threshold;
       Scalar chi2=e*e;
       Scalar gamma = 1;
-      if (chi2>params.kernel_threshold) {
+      if (chi2>k_thresh) {
         dest.stats[tid].num_outliers=1;
-        gamma = stats_mode ? 0.f : sqrt(params.kernel_threshold/chi2);
+        gamma = disable_outliers ? 0.f : sqrt(k_thresh/chi2);
       } else {
         dest.stats[tid].num_inliers=1;
       }

@@ -55,7 +55,7 @@ namespace kd_slam {
         fac.vel_to_ref           = MAX_FRAMES + fac.to_ref;
         fac.tree_fixed           = from_frame->tree.get();
         fac.tree_moving          = to_frame->tree.get();
-        fac.disable_inlier_ratio = force_valid ? 0 : _ba_params.ba_disable_inlier_ratio;
+        fac.disable_hit_ratio = force_valid ? 0 : _ba_params.ba_disable_hit_ratio;
         addFactor(std::make_shared<MultiViewCTICPFactor>(fac));
         ++num_added;
       }
@@ -118,7 +118,7 @@ namespace kd_slam {
         fac.vel_to_ref           = MAX_FRAMES + fac.to_ref;
         fac.tree_fixed           = from_frame->tree.get();
         fac.tree_moving          = to_frame->tree.get();
-        fac.disable_inlier_ratio = force_valid ? 0 : _ba_params.ba_disable_inlier_ratio;
+        fac.disable_hit_ratio = force_valid ? 0 : _ba_params.ba_disable_hit_ratio;
         addFactor(std::make_shared<MultiViewCTICPFactor>(fac));
         ++num_added;
       }

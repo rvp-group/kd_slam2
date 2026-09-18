@@ -56,6 +56,7 @@ namespace kd_slam {
       _tracker_params.min_inlier_frac       = param_min_inlier_frac.value();
       _tracker_params.max_kf_trans          = param_max_kf_trans.value();
       _tracker_params.max_kf_rot_rad        = param_max_kf_rot_deg.value() * float(M_PI / 180.);
+      _tracker_params.min_coverage          = param_min_coverage.value();
       _odom_aligner        = param_odom_aligner.value();
       _descriptor_matcher  = param_descriptor_matcher.value();
       _motion_model = param_motion_model.value();

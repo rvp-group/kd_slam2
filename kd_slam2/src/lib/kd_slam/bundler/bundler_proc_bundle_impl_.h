@@ -46,7 +46,7 @@ namespace kd_slam {
         fac.icp                  = _multi_icp_aligner.get();
         fac.tree_fixed           = from_frame->tree.get();
         fac.tree_moving          = to_frame->tree.get();
-        fac.disable_inlier_ratio = force_valid ? 0 : _ba_params.ba_disable_inlier_ratio;
+        fac.disable_hit_ratio = force_valid ? 0 : _ba_params.ba_disable_hit_ratio;
         addFactor(std::make_shared<MultiViewICPFactor>(fac));
         ++num_added;
       }

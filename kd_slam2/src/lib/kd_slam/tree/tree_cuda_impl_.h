@@ -39,22 +39,6 @@ namespace kd_slam {
     }
   }
 
-  template <typename KDTreeBase_>
-  __global__ void extractCompressedLeaves_kernel(typename KDTreeBase_::VectorType* compressed_leaves,
-                                                 const typename KDTreeBase_::NodeType* nodes,
-                                                 size_t num_nodes,
-                                                 const size_t* leaves_indices_ptr,
-                                                 size_t num_leaves) {
-    int tid = threadIdx.x + blockIdx.x * blockDim.x;
-    if (tid >= (int)num_leaves) return;
-    int idx=leaves_indices_ptr[tid];
-    if (idx>= (int)num_nodes) return;
-    const auto& n = nodes[idx];
-    int dest_idx=2*tid;
-    compressed_leaves[dest_idx]=n._mean;
-    compressed_leaves[dest_idx+1]=n._direction;
-  }
-
   
   template<typename KDTreeBase_>
   void TreeCUDA_<KDTreeBase_>::copyNodes(Tree_<NodeType>& other) const  {
@@ -68,67 +52,46 @@ namespace kd_slam {
                           cudaMemcpyDeviceToDevice));
   }
 
-
   template <typename KDTreeBase_>
-  std::vector<typename KDTreeBase_::VectorType>
-  TreeCUDA_<KDTreeBase_>::extractCompressedLeaves() const {
-    if (! this->_num_leaves  || ! this->_leaves_indices_ptr)
-      return std::vector<VectorType>();
-    std::vector<VectorType> returned(this->_num_leaves*2);
-
-    int buffer_size=2*sizeof(VectorType)*this->_num_leaves;
-    VectorType* comp_leaves;
-    CUDA_CHECK(cudaMalloc((void**)&comp_leaves,
-                          buffer_size));
-    
-    constexpr int n_threads = 256;
-    const int n_blocks = (this->_num_leaves + n_threads - 1) / n_threads;
-    extractCompressedLeaves_kernel<KDTreeBase_><<<n_blocks, n_threads>>>
-      (comp_leaves, this->_nodes_ptr, this->_num_nodes, this->_leaves_indices_ptr, this->_num_leaves);
-    
-    CUDA_CHECK(cudaMemcpy(&(returned[0]),
-                          comp_leaves,
-                          buffer_size,
-                          cudaMemcpyDeviceToHost));
-    CUDA_CHECK(cudaFree(comp_leaves));
-    return returned;
-  }
-
-  template <typename KDTreeBase_>
-  __global__ void extractCompressedLeavesVel_kernel(typename KDTreeBase_::VectorType* compressed_leaves,
-                                                    const typename KDTreeBase_::NodeType* nodes,
-                                                    size_t num_nodes,
-                                                    const size_t* leaves_indices_ptr,
-                                                    size_t num_leaves,
-                                                    typename KDTreeBase_::VelocityVectorType v) {
+  __global__ void extractVPointsVel_kernel(typename KDTreeBase_::VPoint* vpoints,
+                                           const typename KDTreeBase_::NodeType* nodes,
+                                           size_t num_nodes,
+                                           const size_t* leaves_indices_ptr,
+                                           size_t num_leaves,
+                                           typename KDTreeBase_::VelocityVectorType v,
+                                           bool use_vel) {
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
     if (tid >= (int)num_leaves) return;
     int idx = leaves_indices_ptr[tid];
     if (idx >= (int)num_nodes) return;
-    const auto n = nodes[idx].applyVelocities(v);
-    int dest_idx = 2*tid;
-    compressed_leaves[dest_idx]   = n._mean;
-    compressed_leaves[dest_idx+1] = n._direction;
+    const auto n = use_vel ? nodes[idx].applyVelocities(v) : nodes[idx];
+    typename KDTreeBase_::VPoint& vp=vpoints[tid];
+    vp.point=n._mean;
+    vp.normal=n._direction;
+    vp.rgba[0]=vp.rgba[1]=vp.rgba[2]=vp.rgba[3]=0;
   }
 
+  
   template <typename KDTreeBase_>
-  std::vector<typename KDTreeBase_::VectorType>
-  TreeCUDA_<KDTreeBase_>::extractCompressedLeaves(const VelocityVectorType& v) const {
+  std::vector<typename KDTreeBase_::VPoint>
+  TreeCUDA_<KDTreeBase_>::extractVPoints(const VelocityVectorType& v) const {
     if (!this->_num_leaves || !this->_leaves_indices_ptr)
-      return std::vector<VectorType>();
-    std::vector<VectorType> returned(this->_num_leaves*2);
-    int buffer_size = 2*sizeof(VectorType)*this->_num_leaves;
-    VectorType* comp_leaves;
-    CUDA_CHECK(cudaMalloc((void**)&comp_leaves, buffer_size));
+      return std::vector<VPoint>();
+    bool use_vel=(v!=VelocityVectorType::Zero());
+    std::vector<VPoint> returned(this->_num_leaves);
+    int buffer_size = sizeof(VPoint)*this->_num_leaves;
+    VPoint* vpoints;
+    CUDA_CHECK(cudaMalloc((void**)&vpoints, buffer_size));
     constexpr int n_threads = 256;
     const int n_blocks = (this->_num_leaves + n_threads - 1) / n_threads;
-    extractCompressedLeavesVel_kernel<KDTreeBase_><<<n_blocks, n_threads>>>
-      (comp_leaves, this->_nodes_ptr, this->_num_nodes, this->_leaves_indices_ptr, this->_num_leaves, v);
-    CUDA_CHECK(cudaMemcpy(&(returned[0]), comp_leaves, buffer_size, cudaMemcpyDeviceToHost));
-    CUDA_CHECK(cudaFree(comp_leaves));
+    extractVPointsVel_kernel<KDTreeBase_><<<n_blocks, n_threads>>>
+      (vpoints, this->_nodes_ptr, this->_num_nodes, this->_leaves_indices_ptr, this->_num_leaves, v, use_vel);
+    CUDA_CHECK(cudaMemcpy(&(returned[0]), vpoints, buffer_size, cudaMemcpyDeviceToHost));
+    CUDA_CHECK(cudaFree(vpoints));
     return returned;
   }
 
+  
   template <typename KDTreeBase_>
   __global__ void treeApplyVelocities_kernel(typename KDTreeBase_::NodeType* nodes,
                                              size_t num_nodes,

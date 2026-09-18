@@ -16,7 +16,6 @@ namespace kd_slam {
       T_::syncParams();
       _optimizer_params.pgo_chi2_threshold     = param_pgo_chi2_threshold.value();
       _optimizer_params.velocity_prior_info    = param_velocity_prior_info.value();
-      _optimizer_params.imu_gravity_prior_info = param_imu_gravity_prior_info.value();
       if (param_solver.value() && param_solver.value() != _solver) {
         _solver = param_solver.value();
         _solver->param_actions.pushBack(_solver_action);
@@ -51,11 +50,6 @@ namespace kd_slam {
         for (auto [_, f_] : _map->frames()) {
           auto f = std::dynamic_pointer_cast<Frame>(f_);
           if (!f) continue;
-          if (f->solver_gravity_prior) {
-            f->solver_gravity_prior->setInformationMatrix(
-              SolverGravityPriorFactorType::InformationMatrixType::Identity()
-              * _optimizer_params.imu_gravity_prior_info);
-          }
         }
       }
       pushFrameEvents();

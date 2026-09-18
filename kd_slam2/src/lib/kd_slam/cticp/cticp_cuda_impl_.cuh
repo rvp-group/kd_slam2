@@ -124,6 +124,7 @@ namespace kd_slam {
       }
       this->_moving = &moving;
       _workspace->resize(moving._num_leaves);
+      moving_leaves_stats.resize(moving._num_leaves);
     }
 
     template <typename CTICP_BaseType_>
@@ -149,19 +150,19 @@ namespace kd_slam {
                         const typename CTICP_BaseType_::State moving_state,
                         const typename CTICP_BaseType_::QuadraticTermCache cache,
                         const typename CTICP_BaseType_::ParamsType params,
-                        bool stats_mode) {
+                        bool disable_outliers) {
       int tid = threadIdx.x + blockIdx.x * blockDim.x;
       if (fixed_num_nodes <= 0)          return;
       if (tid >= moving_num_leaves) return;
       int leaf_idx = moving_leaves_indices_ptr[tid];
       const typename CTICP_BaseType_::NodeType& moving_leaf = moving_nodes_ptr[leaf_idx];
       CTICP_BaseType_::quadraticTerm(ws, tid, fixed_state, moving_state, cache,
-                                     fixed_nodes_ptr, moving_leaf, params, stats_mode);
+                                     fixed_nodes_ptr, moving_leaf, params, disable_outliers);
     }
 
     // ---- buildQuadraticForm ----------------------------------------------------
     template <typename CTICP_BaseType_>
-    void CTICP_CUDA_<CTICP_BaseType_>::_buildQuadraticForm(bool stats_mode) {
+    void CTICP_CUDA_<CTICP_BaseType_>::_buildQuadraticForm(bool disable_outliers) {
       using StatsType    = typename CTICP_BaseType_::StatsType;
       using DiagPoseType = typename CTICP_BaseType_::DiagPoseType;
       using DiagVelType  = typename CTICP_BaseType_::DiagVelType;
@@ -186,7 +187,7 @@ namespace kd_slam {
                                                              this->moving_state,
                                                              this->_cache,
                                                              this->params,
-                                                             stats_mode);
+                                                             disable_outliers);
       // reduces run on the same stream: ordered after Jacobian kernel automatically;
       // the cudaMemcpy(D2H) inside the last reduce is the effective sync point
       //  CUDA_CHECK(cudaDeviceSynchronize());
@@ -220,6 +221,12 @@ namespace kd_slam {
       this->H.template block<VDim, VDim>(PDim, PDim) = H_vel;
       this->b.template head<PDim>() = b_pose;
       this->b.template tail<VDim>() = b_vel;
+      using StatsType    = typename CTICP_BaseType_::StatsType;
+      CUDA_CHECK(cudaMemcpy(&moving_leaves_stats[0],
+                            _workspace->_stats,
+                            sizeof(StatsType)*this->_moving->_num_leaves,
+                            cudaMemcpyDeviceToHost));
+
     }
 
     // ---- Dual Jacobian kernel --------------------------------------------------
@@ -237,19 +244,19 @@ namespace kd_slam {
                              const typename CTICP_BaseType_::State moving_state,
                              const typename CTICP_BaseType_::QuadraticTermCache cache,
                              const typename CTICP_BaseType_::ParamsType params,
-                        bool stats_mode) {
+                             bool disable_outliers) {
       int tid = threadIdx.x + blockIdx.x * blockDim.x;
       if (fixed_num_nodes <= 0)          return;
       if (tid >= moving_num_leaves) return;
       int leaf_idx = moving_leaves_indices_ptr[tid];
       const typename CTICP_BaseType_::NodeType& moving_leaf = moving_nodes_ptr[leaf_idx];
       CTICP_BaseType_::quadraticTermDual(ws, tid, fixed_state, moving_state, cache,
-                                         fixed_nodes_ptr, moving_leaf, params, stats_mode);
+                                         fixed_nodes_ptr, moving_leaf, params, disable_outliers);
     }
 
     // ---- buildQuadraticFormDual ------------------------------------------------
     template <typename CTICP_BaseType_>
-    void CTICP_CUDA_<CTICP_BaseType_>::_buildQuadraticFormDual(bool stats_mode) {
+    void CTICP_CUDA_<CTICP_BaseType_>::_buildQuadraticFormDual(bool disable_outliers) {
       using StatsType         = typename CTICP_BaseType_::StatsType;
       using DiagPoseType      = typename CTICP_BaseType_::DiagPoseType;
       using DiagVelType       = typename CTICP_BaseType_::DiagVelType;
@@ -277,7 +284,7 @@ namespace kd_slam {
                                                                   this->moving_state,
                                                                   this->_cache,
                                                                   this->params,
-                                                             stats_mode);
+                                                             disable_outliers);
 
       _workspace->_stats_adder.template             reduceDeferred<OpSum<StatsType>>         (_workspace->_stats,            n);
       _workspace->_diag_pose_adder.template         reduceDeferred<OpSum<DiagPoseType>>      (_workspace->_diag_pose,        n);
@@ -313,6 +320,12 @@ namespace kd_slam {
       diag_vel_B.unpack(this->H_dual_vel_B, this->b_dual_vel_B);
       cross_pose_vel_B.unpack(this->H_dual_cross_pose_vel_B);
       cross_vel_AB.unpack(this->H_dual_cross_vel_AB);
+      using StatsType    = typename CTICP_BaseType_::StatsType;
+      CUDA_CHECK(cudaMemcpy(&moving_leaves_stats[0],
+                            _workspace->_stats,
+                            sizeof(StatsType)*this->_moving->_num_leaves,
+                            cudaMemcpyDeviceToHost));
+
     }
 
     template <typename CTICP_BaseType_>

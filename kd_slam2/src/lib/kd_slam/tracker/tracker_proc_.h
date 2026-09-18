@@ -53,6 +53,7 @@ namespace kd_slam {
       
       TrackerParams _tracker_params;
       PARAM(srrg2_core::PropertyFloat, min_inlier_frac,    "min inlier fraction to keep keyframe",        0.6f,  &_param_changed);
+      PARAM(srrg2_core::PropertyFloat, min_coverage,    "min coverage to keep keyframe",        0.0f,  &_param_changed);
       PARAM(srrg2_core::PropertyFloat, max_kf_trans,       "max translation before new keyframe [m]",     3.0f,  &_param_changed);
       PARAM(srrg2_core::PropertyFloat, max_kf_rot_deg,     "max rotation before new keyframe [deg]",      360.f, &_param_changed);
       PARAM(srrg2_core::PropertyConfigurable_<AlignerBase>,       odom_aligner,       "odometry aligner",   nullptr, &_param_changed);

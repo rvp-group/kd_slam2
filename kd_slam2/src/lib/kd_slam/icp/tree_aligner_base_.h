@@ -17,7 +17,10 @@ namespace kd_slam {
       Scalar max_error=1;
       Scalar min_normal_cos=cos(25./180.*M_PI);
       int min_good_measurements=10;
-      int max_iterations=20;
+      Scalar inlier_only_kernel_threshold=0.1;
+      Scalar mean_distance_min=0.2;
+      Scalar mean_distance_max=2;
+      Scalar mean_distance_gain=0.05;
     };
 
     enum AlignerType {AlignerICP, AlignerCTICP};
@@ -43,6 +46,13 @@ namespace kd_slam {
       PARAM(srrg2_core::PropertyInt,   min_good_measurements, "min inliers to accept a round", 10,                        &_params_changed);
       PARAM(srrg2_core::PropertyInt,   max_iterations,        "max ICP iterations",            20,                        &_params_changed);
       PARAM(srrg2_core::PropertyString, log_file, "file where to dump aligner log", "", &_params_changed);
+      PARAM(srrg2_core::PropertyFloat, mean_distance_min,      "offset for leaf_mean cutoff dynamic distance threshold",         0.1f,                      &_params_changed);
+      PARAM(srrg2_core::PropertyFloat, mean_distance_max,      "upper bound for mean cutoff",         2.0f,                      &_params_changed);
+      PARAM(srrg2_core::PropertyFloat, mean_distance_gain,     "slope of the dynamic mean cutoff",    0.05f,                      &_params_changed);
+
+      PARAM(srrg2_core::PropertyFloat, inlier_only_kernel_threshold,      "chi2 kernel threshold for the ",         0.1f,                      &_params_changed);
+
+      PARAM(srrg2_core::PropertyInt, inlier_only_max_iterations,      "max iterations in inlier only mode ",         20,                      &_params_changed);
 
       PARAM(srrg2_core::PropertyConfigurable_<TerminationCriteria>, term_crit, "termination criteria",  nullptr, &_params_changed);
 
@@ -51,8 +61,7 @@ namespace kd_slam {
 
       virtual void setFixed (const TreeBaseType& fixed)  = 0;
       virtual void setMoving(const TreeBaseType& moving) = 0;
-
-      virtual bool oneRound(bool stats_mode=false) = 0;
+      virtual bool oneRound(bool disable_update=false, bool disable_outliers=false) = 0;
       virtual AlignerType alignerType() const = 0;
       struct FixedEntry {
         Stats stats;
@@ -60,6 +69,7 @@ namespace kd_slam {
         const TreeBaseType* fixed_tree = nullptr;
       };
       using FixedEntryPtr = std::shared_ptr<FixedEntry>;
+      std::vector<Stats> moving_leaves_stats;
       
       template <int Dim, typename State_>
       struct FixedEntry_ : public FixedEntry {
@@ -93,25 +103,37 @@ namespace kd_slam {
       virtual VelocityVectorType velocities() const { return VelocityVectorType::Zero(); }
       virtual void setVelocities(const VelocityVectorType& v ) {}
       virtual void resetMovingState() {}
-      virtual void buildQuadraticForm(bool stats_mode=false) = 0;
-      virtual void buildQuadraticForm(FixedEntry& fixed, bool stats_mode=false) {}
+      virtual void buildQuadraticForm(bool disable_outliers=false) = 0;
+      virtual void buildQuadraticForm(FixedEntry& fixed, bool disable_outliers=false) {}
       virtual void saveStartState() = 0;
       
       int compute(bool stats_mode=false) {
         syncParams();
+
+        int  outlier_iter = stats_mode ? 0 : param_max_iterations.value();
+        int  inlier_iter  = stats_mode ? 1 : param_inlier_only_max_iterations.value();
         stats_log.clear();
-        stats_log.reserve(param_max_iterations.value());
+        stats_log.reserve(outlier_iter+inlier_iter);
         saveStartState();
-        int max_iter=stats_mode? 1 : param_max_iterations.value();
-        for (int i = 0; i < max_iter; ++i) {
-          bool result = oneRound(stats_mode);
+
+        int iter=0;
+        for (int k=0; k<outlier_iter; ++k, ++iter) {
+          bool result = oneRound(false, false);
           stats_log.push_back(stats);
           if (!result)
-            return -i;
-          if (param_term_crit.value() && param_term_crit->hasToStop(stats, i))
-            return i;
+            return -iter;
+          if (param_term_crit.value() && param_term_crit->hasToStop(stats, iter) )
+            break;
         }
-        return param_max_iterations.value();
+        for (int k=0; k<inlier_iter; ++k, ++iter) {
+          bool result = oneRound(stats_mode, true);
+          stats_log.push_back(stats);
+          if (!result)
+            return -iter;
+          if (param_term_crit.value() && param_term_crit->hasToStop(stats, iter) )
+            break;
+        }
+        return iter;
       }
 
       virtual bool isGPU() const = 0;
@@ -132,6 +154,12 @@ namespace kd_slam {
         _pose_prior_info=info;
       }
       Stats stats;
+      inline Scalar coverage() const {
+        if (! _moving || !_fixed)
+          return -1;
+        int size_merged=(_moving->_num_leaves+_fixed->_num_leaves)-stats.num_inliers;
+        return (Scalar)stats.num_inliers/(Scalar)(size_merged);
+      }
       std::vector<Stats> stats_log;
       std::unordered_map<int, FixedEntryPtr> _fixed_forest;
       std::unique_ptr<std::ostream>& logStream() {return _log_stream;}

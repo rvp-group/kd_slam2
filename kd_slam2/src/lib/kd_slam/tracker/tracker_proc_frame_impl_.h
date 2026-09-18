@@ -33,18 +33,21 @@ namespace kd_slam {
     template <typename Base_>
     void TrackerProc_<Base_>::addFrame(const FrameTreePtr& src_) {
       using namespace std;
+      using VPoint=typename Base_::TreeBaseType::VPoint;
+      
       _floating_frame  = makeFrame(src_);
 
       IsometryType pose_in_kf_prev = _pose_in_kf;
       _motion_model->doPredict(*_floating_frame);
       _floating_frame->pose_in_world = poseGlobal();
 
-      vector<VectorType> compressed_leaves;
+      vector<VPoint> vpoints;
       int kf_ref = _keyframe ? _keyframe->ref() : -1;
       pushEvent(std::make_shared<EventFrameAdded>(_floating_frame->ts,
                                                   frameCount(), kf_ref, _pose_in_kf,
-                                                  compressed_leaves,
+                                                  vpoints,
                                                   FrameAddedPlaceholder,
+                                                  src_->tree->root_eigenvalues,
                                                   src_->topic, src_->bag_offset, src_->stamp_ns));
       _floating_frame->velocity.setZero();
       if (_motion_model->frameDuration() > 0) {
@@ -54,11 +57,12 @@ namespace kd_slam {
                                                   _floating_frame->velocity));
         _floating_frame->applyVelocity();
       }
-      compressed_leaves = src_->tree->extractCompressedLeaves();
+      vpoints = src_->tree->extractVPoints();
       pushEvent(std::make_shared<EventFrameAdded>(_floating_frame->ts,
                                                   frameCount(), kf_ref, _pose_in_kf,
-                                                  compressed_leaves,
+                                                  vpoints,
                                                   FrameAddedCloud,
+                                                  src_->tree->root_eigenvalues,
                                                   src_->topic, src_->bag_offset, src_->stamp_ns));
       if (!_keyframe) {
         _pose_in_kf.setIdentity();
@@ -98,28 +102,32 @@ namespace kd_slam {
                                                   _floating_frame->frame_count,
                                                   _floating_frame->velocity));
         _floating_frame->applyVelocity();
-        compressed_leaves = _floating_frame->tree->extractCompressedLeaves();
+        vpoints = _floating_frame->tree->extractVPoints();
         pushEvent(std::make_shared<EventFrameAdded>(_floating_frame->ts,
                                                     frameCount(),
                                                     (_keyframe ? _keyframe->ref() : -1),
-                                                    _pose_in_kf, compressed_leaves,
+                                                    _pose_in_kf, vpoints,
                                                     FrameAddedDeskew,
+                                                    _floating_frame->tree->root_eigenvalues,
                                                     src_->topic, src_->bag_offset, src_->stamp_ns));
       }
 
       pushEvent(std::make_shared<EventOdometry>(_floating_frame->ts,
                                                 _pose_in_kf,
                                                 _floating_frame->pose_in_world,
-                                                _odom_aligner->stats));
+                                                _odom_aligner->stats,
+                                                _odom_aligner->coverage(),
+                                                _odom_aligner->moving_leaves_stats));
       ++_frame_idx;
     }
 
     template <typename Base_>
     bool TrackerProc_<Base_>::shouldSwitchKeyframe(const IsometryType& X,
                                                const ICPStats& stats) const {
-      return stats.inlierRatio() < _tracker_params.min_inlier_frac
-        || X.translation().norm() > _tracker_params.max_kf_trans
-        || fabs(GeometryTraits::getAngle(X.linear())) > _tracker_params.max_kf_rot_rad;
+      return (stats.inlierRatio() < _tracker_params.min_inlier_frac)
+        || (_odom_aligner->coverage()< _tracker_params.min_coverage)
+        || (X.translation().norm() > _tracker_params.max_kf_trans)
+        || (fabs(GeometryTraits::getAngle(X.linear())) > _tracker_params.max_kf_rot_rad);
     }
 
   } // namespace slam
