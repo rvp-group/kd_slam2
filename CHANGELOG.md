@@ -1,5 +1,35 @@
 # Changelog
 
+## v2.4 -- 2026-10-06
+### Algo
+- Loop closure: when a match is found all canonizations of the match are tested, not just the best one
+  and and there is a second stage of consensus.
+  Results differ from v2.3 (more loops closed).
+- Tree Loading: added the vertical angle offset correction for kitti HDL-64, before voxelization. 0.205 deg as suggested in KISS-ICP. Performances on kitti substantially improved.
+- Motion Model: onOriginReset is the single reset method when a new reference is chosen (reloc, new kd or loop).
+- Voxelizer: enabled only when res is >0
+- TreeLoader: added event for profiling
+- TreeCPU_: Tree_CPUfromCPU_ copies all the fields.
+- kd_ouster: new package for direct coupling with ouster lidars, and to record/play the raw datastream
+	
+### Build:
+- all packages that have no ros dep are now plain CMake. srrg_make modules no loonger needed.
+- a ros free build requires just colcon.
+- ros parts confined in the _ros packages and loaded at runtime if compiled.
+- binaries are in bin/ (no ros2 run)
+- requires sync of srrg2_packages that  switched to plain CMake too
+
+
+### Configs
+- updated parameters. you need to recompute the trees now
+
+## v2.3 -- 2026-09-18
+### Algo
+- Removed legacy stuff (imu full filter, gravity prior, localizer, useless tests)
+- FlatLeafPolicy: added check for flatness on all eigenvalues
+- Voxelizer: now uses flat structures, 3x speedup
+- TreeLoader: enabled parallel tree construction.
+	
 ## v2.2 -- 2026-07-16
 
 ### Algo
