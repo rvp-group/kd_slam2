@@ -1,4 +1,5 @@
 #include <iomanip>
+#include "kd_slam/utils/time_utils.h"
 #pragma once
 namespace kd_slam {
   namespace slam {
@@ -19,9 +20,9 @@ namespace kd_slam {
 
       auto previous_kf = _keyframe;
 
-      auto t0 = chrono::steady_clock::now();
+      auto t0 = utils::getNow();
       PGOFactorPtr f_loop = seekLoops();
-      double t_loop = chrono::duration<double, milli>(chrono::steady_clock::now() - t0).count();
+      double t_loop = utils::getDurationMs(t0);
 
       double t_rel = 0;
       if (f_loop) {
@@ -41,10 +42,10 @@ namespace kd_slam {
         if (shouldSwitchKeyframe(_pose_in_kf, _odom_aligner->stats)) {
           Scalar reloc_backup=_slam_params.relocalize_thresholds.slack;
           _slam_params.relocalize_thresholds.slack=_pose_in_kf.translation().norm()*reloc_backup;
-          t0 = chrono::steady_clock::now();
+          t0 = utils::getNow();
           bool relocalize_ok = relocalize();
           _slam_params.relocalize_thresholds.slack=reloc_backup;
-          t_rel = chrono::duration<double, milli>(chrono::steady_clock::now() - t0).count();
+          t_rel = utils::getDurationMs(t0);
           if (relocalize_ok)
             _status = Relocalized;
           if (!relocalize_ok)
@@ -56,21 +57,23 @@ namespace kd_slam {
       if (_solver && _need_optimize) {
         if (_pending_chi2 > this->_optimizer_params.pgo_chi2_threshold) {
           _need_optimize = false;
-          t0 = chrono::steady_clock::now();
+          t0 = utils::getNow();
           optimize();
-          t_opt = chrono::duration<double, milli>(chrono::steady_clock::now() - t0).count();
+          t_opt = utils::getDurationMs(t0);
           _floating_frame->pose_in_world = _keyframe->pose_in_world * _pose_in_kf;
           pushOptimizeEvent(_floating_frame->ts);
           _pending_chi2 = 0;
         }
       }
 
-      pushEvent(std::make_shared<EventFrameProcessed>(_status, _t_align, 0, t_loop, t_rel, t_opt, pchi, _floating_frame->ts));
-
+      double t_prop=0;
       if (previous_kf != _keyframe) {
-        t0 = chrono::steady_clock::now();
+        t0 = utils::getNow();
         propagateCovarianceAndDistance();
+        t_prop=utils::getDurationMs(t0);
       }
+
+      pushEvent(std::make_shared<EventFrameProcessed>(_status, _t_align, t_prop, t_loop, t_rel, t_opt, pchi, _floating_frame->ts));
     }
 
     template <typename T_>
@@ -109,7 +112,6 @@ namespace kd_slam {
 
       }
 
-      _motion_model->onKeyframe(IsometryType::Identity());
       _motion_model->onOriginReset(IsometryType::Identity());
       if (_descriptor_matcher)
         _descriptor_matcher->addDescriptor(_keyframe->descriptor, _keyframe->ref());

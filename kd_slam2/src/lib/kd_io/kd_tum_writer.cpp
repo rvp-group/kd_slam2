@@ -19,8 +19,10 @@ namespace kd_slam {
     }
     cerr << "TumWriter done, writing output" << endl;
     int n_frames=0;
+    int prev_kf = -100;
     for (auto& [count, frame]: _frames) {
       int kf_ref=frame->kf_ref;
+      bool new_kf=prev_kf!=kf_ref;
       const IsometryType& pose_in_kf=frame->pose_in_kf;
       IsometryType global_pose;
       if (kf_ref>=0) { // is keyframe
@@ -28,9 +30,12 @@ namespace kd_slam {
       } else {
         global_pose=pose_in_kf;
       }
-      writeTUM(*output_stream, frame->ts, global_pose);
-      cerr << "\rwriting " << n_frames << "/" << _frames.size();
-      ++n_frames;
+      if (! kf_only || kf_ref<=0 || new_kf) {
+        writeTUM(*output_stream, frame->ts, global_pose);
+        cerr << "\rwriting " << n_frames << "/" << _frames.size();
+        ++n_frames;
+      }
+      prev_kf=kf_ref;
     }
     cerr << endl << "Done" << endl;
 

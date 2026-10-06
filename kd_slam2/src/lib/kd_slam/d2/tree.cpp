@@ -2,10 +2,10 @@
 #include "typedefs.h"
 #include <Eigen/Core>
 #include <Eigen/Geometry>
-#include "cuda/cuda_common.h"
-#include "utils/geometry_.h"
-#include "utils/geometry_2d_.h"
-#include "utils/geometry_2d_impl_.h"
+#include "kd_slam/cuda/cuda_common.h"
+#include "kd_slam/utils/geometry_.h"
+#include "kd_slam/utils/geometry_2d_.h"
+#include "kd_slam/utils/geometry_2d_impl_.h"
 #include "kd_slam/tree/tree_defs.h"
 #include "kd_slam/tree/tree_defs.h"
 #include "kd_slam/tree/tree_impl_.h"
@@ -24,7 +24,8 @@ namespace kd_slam {
   template struct  CountLeafPolicy_<NodePoint2f>;
   template struct  FlatLeafPolicy_<NodePoint2f>;
   template struct  TreeGenerator_<NodePoint2f>;
-
+  
+  
   namespace utils {
     template struct Voxelizer_<kd_slam::d2::PointTraits>;
   }
@@ -60,11 +61,13 @@ namespace kd_slam {
 
   template std::ostream& operator << (std::ostream& os, const NodePoint2f& n);
 
+  template void Tree_CPUfromCPU_<TreePoint2f>(TreeCPU_<TreePoint2f>& dest, const TreeCPU_<TreePoint2f>&src);
   
   using TreeGenerator2D = TreeGenerator_<d2::NodeType>;
   using Voxelizer2D     = utils::Voxelizer_<d2::PointTraits>;
-
+  
   void registerTreeTypes2D() {
+    using namespace srrg2_core;
     BOSS_REGISTER_CLASS(TreeGenerator2D);
     BOSS_REGISTER_CLASS(Voxelizer2D);
   }

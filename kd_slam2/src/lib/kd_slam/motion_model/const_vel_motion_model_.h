@@ -31,8 +31,6 @@ namespace kd_slam{
         VelocityVectorType dv=TrackerType::GeometryTraits::logmap(delta);
         _T_delta_log=alpha*_T_delta_log+(1.-alpha)*dv;
       }
-      // called by the owner when  a new keyframe is created
-      void onKeyframe(const IsometryType& pose_in_kf = IsometryType::Identity()) override {} 
 
       void reset() override {
         _last_ts=-1;

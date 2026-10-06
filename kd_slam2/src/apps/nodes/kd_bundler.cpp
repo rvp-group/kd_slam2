@@ -24,7 +24,8 @@ using AppTraits3D = AppTraits_<d3::NodeType>;
 template <typename AppTraits>
 static int run(PropertyContainerManager& manager,
                const std::string&        proc_name,
-               EventSinkType             ev_sink_type,
+               bool                      a_gl,
+               bool                      a_logger,
                ArgumentString& a_input_map,
                ArgumentString& a_output_map,
                ArgumentFlag&   a_bundle,
@@ -33,6 +34,7 @@ static int run(PropertyContainerManager& manager,
   using namespace std;
   using ProcType   = typename AppTraits::ProcType;
   using NodeType   = typename AppTraits::NodeType;
+  using LoaderType = typename AppTraits::LoaderType;
 
   if (!a_input_map.isSet()) {
     cerr << "input map (-im) required\n";
@@ -48,7 +50,10 @@ static int run(PropertyContainerManager& manager,
     if (a_output_map.isSet() && !a_output_map.value().empty())
       saveMap(a_output_map.value(), *proc->map());
   };
-  runner.setup(proc, ev_sink_type, "");
+  list<event::EventSinkPtr> sinks;
+  if (a_gl)     sinks.push_back(make_shared<typename AppTraits::GLDrawableType>());
+  if (a_logger) sinks.push_back(make_shared<typename AppTraits::LoggerType>());
+  runner.setup(proc, shared_ptr<LoaderType>(), sinks);
 
   if (runner.viewer) {
     runner.viewer->on_bundle         = [&]() { proc->bundle(); };
@@ -89,7 +94,8 @@ int main(int argc, char** argv) {
   ArgumentString a_config    (&cmd, "c",  "config",     "pipeline config file",          "config.json");
   ArgumentString a_proc      (&cmd, "p",  "proc",       "name of processor in config",   "sink");
   ArgumentFlag   a_2d        (&cmd, "2",  "two-dim",    "use 2D pipeline");
-  ArgumentInt    a_viewer    (&cmd, "V",  "viewer",     "0:disabled 1:logger 2:GL",      0);
+  ArgumentFlag   a_gl        (&cmd, "g",  "gl",         "enable GL viewer");
+  ArgumentFlag   a_logger    (&cmd, "l",  "logger",     "enable event logger to stderr");
   ArgumentString a_input_map (&cmd, "im", "input-map",  "input map file (.kd)",          "");
   ArgumentString a_output_map(&cmd, "om", "output-map", "output map filename",           "");
   ArgumentFlag   a_bundle    (&cmd, "b",  "bundle",     "run ICP bundle adjustment");
@@ -97,15 +103,13 @@ int main(int argc, char** argv) {
   ArgumentInt    a_rounds    (&cmd, "r", "rounds",  "run n iterations", 1); 
   cmd.parse();
 
-  EventSinkType ev_sink_type = parseViewerArg(a_viewer);
-  std::cerr << "Viewer: [" << sink2str[a_viewer.value()] << "]\n";
   PropertyContainerManager manager;
   cmd.summary();
   manager.read(a_config.value());
 
   if (a_2d.isSet())
-    return run<AppTraits2D>(manager,  a_proc.value(), ev_sink_type,
+    return run<AppTraits2D>(manager,  a_proc.value(), a_gl.isSet(), a_logger.isSet(),
                             a_input_map, a_output_map, a_bundle, a_ct_bundle, a_rounds);
-  return run<AppTraits3D>(manager,  a_proc.value(), ev_sink_type,
+  return run<AppTraits3D>(manager,  a_proc.value(), a_gl.isSet(), a_logger.isSet(),
                           a_input_map, a_output_map, a_bundle, a_ct_bundle, a_rounds);
 }

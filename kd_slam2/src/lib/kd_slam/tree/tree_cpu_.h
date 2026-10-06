@@ -233,5 +233,7 @@ namespace kd_slam {
 
   };
 
-
+  template<typename KDTreeBase_>
+  void Tree_CPUfromCPU_(TreeCPU_<KDTreeBase_>& dest, const TreeCPU_<KDTreeBase_>&src);
+  
 } // namespace kd_slam

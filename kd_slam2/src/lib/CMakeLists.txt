@@ -17,7 +17,6 @@ target_link_libraries(kd_slam_2d_library PUBLIC
 
 target_include_directories(kd_slam_2d_library PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/lib>
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/common>
   $<INSTALL_INTERFACE:include/kd_slam2>
 )
 
@@ -36,7 +35,6 @@ target_link_libraries(kd_slam_3d_library PUBLIC
 
 target_include_directories(kd_slam_3d_library PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/lib>
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/common>
   $<INSTALL_INTERFACE:include/kd_slam2>
 )
 
@@ -52,7 +50,6 @@ target_link_libraries(kd_slam_cuda_init PUBLIC
 
 target_include_directories(kd_slam_cuda_init PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/lib>
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/common>
   $<INSTALL_INTERFACE:include/kd_slam2>
 )
 endif()

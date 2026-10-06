@@ -1,9 +1,9 @@
 #pragma once
-#include "cuda/cuda_common.h"
+#include "kd_slam/cuda/cuda_common.h"
 #include <Eigen/Geometry>
 #include <iostream>
 #include "kd_slam/tree/tree_defs.h"
-#include "utils/geometry_2d_.h"
+#include "kd_slam/utils/geometry_2d_.h"
 #include "kd_slam/icp/icp_.h"
 #include "kd_slam/icp/icp_cpu_.h"
 #include "kd_slam/utils/geometry_2d_.h"

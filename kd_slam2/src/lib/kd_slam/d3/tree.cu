@@ -1,9 +1,9 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
-#include "cuda/cuda_common.h"
-#include "utils/geometry_.h"
-#include "utils/geometry_3d_.h"
-#include "utils/geometry_3d_impl_.h"
+#include "kd_slam/cuda/cuda_common.h"
+#include "kd_slam/utils/geometry_.h"
+#include "kd_slam/utils/geometry_3d_.h"
+#include "kd_slam/utils/geometry_3d_impl_.h"
 
 #include "kd_slam/tree/tree_defs.h"
 #include "kd_slam/tree/tree_impl_.h"

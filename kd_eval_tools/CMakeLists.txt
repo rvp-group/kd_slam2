@@ -1,16 +1,10 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.16)
 project(kd_eval_tools LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_BUILD_TYPE Release)
 
-find_package(ament_cmake REQUIRED)
 find_package(Eigen3 REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(rosbag2_cpp REQUIRED)
-find_package(rosbag2_storage REQUIRED)
-find_package(sensor_msgs REQUIRED)
-find_package(nav_msgs REQUIRED)
 
 # ---------- eval library (ported from vbr_bench) ----------
 add_library(eval_lib
@@ -20,10 +14,6 @@ add_library(eval_lib
 )
 target_include_directories(eval_lib PUBLIC src ${EIGEN3_INCLUDE_DIR})
 target_link_libraries(eval_lib Eigen3::Eigen)
-
-# ---------- kitti2ros2bag ----------
-add_executable(kitti2ros2bag src/kitti2ros2bag.cpp)
-ament_target_dependencies(kitti2ros2bag rclcpp rosbag2_cpp rosbag2_storage sensor_msgs)
 
 # ---------- kitti_gt2tum ----------
 add_executable(kitti_gt2tum src/kitti_gt2tum.cpp)
@@ -43,12 +33,8 @@ target_link_libraries(traj_compare eval_lib)
 add_executable(traj_intcompare src/traj_intcompare.cpp)
 target_link_libraries(traj_intcompare eval_lib)
 
-# ---------- odom2tum ----------
-add_executable(odom2tum src/odom2tum.cpp)
-ament_target_dependencies(odom2tum rclcpp nav_msgs)
-
-install(TARGETS kitti2ros2bag kitti_gt2tum kitti_tum2poses traj_compare traj_intcompare odom2tum
+# kitti2ros2bag and odom2tum (ROS) live in kd_slam2_ros
+# same install location as before: the scripts call lib/kd_eval_tools/<tool>
+install(TARGETS kitti_gt2tum kitti_tum2poses traj_compare traj_intcompare
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
-
-ament_package()

@@ -17,6 +17,7 @@ namespace kd_slam {
     using BaseType::_factors;
     std::ostream* output_stream=nullptr;
     void setDone() override;
+    bool kf_only=false;
   };
 
 } // namespace kd_slam

@@ -1,5 +1,5 @@
 #pragma once
-#include "cuda/cuda_common.h"
+#include "kd_slam/cuda/cuda_common.h"
 #include "tree_convert_.h"
 #include "tree_cpu_.h"
 #include <queue>
@@ -191,11 +191,16 @@ namespace kd_slam {
   template<typename KDTreeBase_>
   void Tree_CPUfromCPU_(TreeCPU_<KDTreeBase_>& dest, const TreeCPU_<KDTreeBase_>&src)
   {
+    dest.root_eigenvectors=src.root_eigenvectors;
+    dest.root_eigenvalues=src.root_eigenvalues;
+    dest.root_mean=src.root_mean;
+
     dest._points_storage=src._points_storage;
     dest._nodes_storage=src._nodes_storage;
     dest._points_ptr=dest._points_storage ? &(*dest._points_storage)[0] : nullptr;
-    dest._num_points=dest._points_storage ? dest._points_storage->size() : 0;
+    dest._num_points=(dest._points_storage) ? dest._points_storage->size() : 0;
     dest._nodes_ptr=&dest._nodes_storage[0];
+    dest._num_nodes=dest._nodes_storage.size();
     dest.recomputeLeaves();
   }
 

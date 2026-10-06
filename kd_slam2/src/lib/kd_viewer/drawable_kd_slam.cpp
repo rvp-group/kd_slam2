@@ -145,7 +145,7 @@ namespace kd_slam {
                << " ang: " << m.rotation_delta*(180.f/M_PI)
                << " trs: " << m.translation_delta
                << " scr: " << m.score
-               << " cov: " << m.coverage
+               << " cov[%]: " << m.coverage*100
                << " inl: " << m.inlier_ratio * 100
                << " res: " << MatchLabelResultStr[m.match_result]
                << ") " << endl;

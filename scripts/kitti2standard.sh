@@ -12,8 +12,9 @@ KITTI=${KITTI:-~/kd_slam/kitti/dataset}
 BAGS=${BAGS:-$KITTI/bags}
 GT=${GT:-$KITTI/gt}
 
-INSTALL=${INSTALL:-${KD_SLAM_ROS_WORKSPACE_INSTALL:-~/ws/install}/kd_eval_tools}
-CONVERTER=$INSTALL/lib/kd_eval_tools/kitti2ros2bag
+WS_INSTALL=${KD_SLAM_ROS_WORKSPACE_INSTALL:-~/ws/install}
+INSTALL=${INSTALL:-$WS_INSTALL/kd_eval_tools}
+CONVERTER=${CONVERTER:-$WS_INSTALL/kd_slam2_ros/lib/kd_slam2_ros/kitti2ros2bag}
 GT_CONV=$INSTALL/lib/kd_eval_tools/kitti_gt2tum
 
 SEQUENCES=${@:-00 01 02 03 04 05 06 07 08 09 10}

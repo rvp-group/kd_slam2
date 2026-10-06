@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>kd_ouster</name>
+  <version>0.0.0</version>
+  <description>TODO: Package description</description>
+  <maintainer email="grisetti@dis.uniroma1.it">giorgio</maintainer>
+  <license>TODO: License declaration</license>
+
+  <buildtool_depend>cmake</buildtool_depend>
+
+  <depend>srrg2_core</depend>
+  <depend>srrg2_solver</depend>
+  <depend>kd_slam2</depend>
+  
+
+  <export>
+    <build_type>cmake</build_type>
+  </export>
+</package>

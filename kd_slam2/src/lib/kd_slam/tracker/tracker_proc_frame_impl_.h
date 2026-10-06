@@ -1,4 +1,5 @@
 #include <iomanip>
+#include "kd_slam/utils/time_utils.h"
 #pragma once
 namespace kd_slam {
   namespace slam {
@@ -39,7 +40,6 @@ namespace kd_slam {
 
       IsometryType pose_in_kf_prev = _pose_in_kf;
       _motion_model->doPredict(*_floating_frame);
-      _floating_frame->pose_in_world = poseGlobal();
 
       vector<VPoint> vpoints;
       int kf_ref = _keyframe ? _keyframe->ref() : -1;
@@ -74,13 +74,13 @@ namespace kd_slam {
 
       _pose_in_kf = _pose_in_kf * _motion_model->prediction();
 
-      auto t0 = chrono::steady_clock::now();
+      auto t0 = utils::getNow();
 
       _odom_aligner->setPosePrior(_motion_model->priorXRef(),
                                   _motion_model->priorZ(),
                                   _motion_model->priorOmega());
       alignFrames(*_odom_aligner, _keyframe, _floating_frame, _pose_in_kf, IFTracking);
-      _t_align = chrono::duration<double, milli>(chrono::steady_clock::now() - t0).count();
+      _t_align = utils::getDurationMs(t0);
       _odom_aligner->setPosePrior(IsometryType::Identity(),
                                  IsometryType::Identity(),
                                  PoseHessianType::Zero());

@@ -12,8 +12,4 @@ namespace kd_slam {
   std::vector<typename PointTraits_::PointType>
   toPointsVector(const PointCloudMsgType& msg, double scan_duration = -1.0);
 
-  template <typename PointTraits_>
-  std::vector<typename PointTraits_::PointType>
-  toPointsVector(const PointCloudLivox& msg, double scan_duration = -1.0);
-
 } // namespace kd_slam

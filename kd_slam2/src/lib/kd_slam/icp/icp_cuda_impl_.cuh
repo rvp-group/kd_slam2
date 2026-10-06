@@ -1,5 +1,5 @@
 #include "icp_cuda_.h"
-#include "cuda/reduce_impl_.cuh"
+#include "kd_slam/cuda/reduce_impl_.cuh"
 #include "icp_ws_item_.h"
 #include <iostream>
 

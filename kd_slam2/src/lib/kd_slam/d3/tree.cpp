@@ -2,10 +2,10 @@
 #include "typedefs.h"
 #include <Eigen/Core>
 #include <Eigen/Geometry>
-#include "cuda/cuda_common.h"
-#include "utils/geometry_.h"
-#include "utils/geometry_3d_.h"
-#include "utils/geometry_3d_impl_.h"
+#include "kd_slam/cuda/cuda_common.h"
+#include "kd_slam/utils/geometry_.h"
+#include "kd_slam/utils/geometry_3d_.h"
+#include "kd_slam/utils/geometry_3d_impl_.h"
 #include "kd_slam/tree/tree_defs.h"
 #include "kd_slam/tree/tree_defs.h"
 #include "kd_slam/tree/tree_impl_.h"
@@ -48,6 +48,7 @@ namespace kd_slam {
     g_tree_copyTo3d(dest, src);
   }
 
+  template void Tree_CPUfromCPU_<TreePoint3f>(TreeCPU_<TreePoint3f>& dest, const TreeCPU_<TreePoint3f>&src);
 
 
 

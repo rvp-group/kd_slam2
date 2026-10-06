@@ -1,5 +1,5 @@
 #pragma once
-#include "cuda/cuda_common.h"
+#include "kd_slam/cuda/cuda_common.h"
 #include <Eigen/Geometry>
 #include "geometry_.h"
 namespace kd_slam {

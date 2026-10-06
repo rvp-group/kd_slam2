@@ -1,0 +1,13 @@
+@PACKAGE_INIT@
+# both roots: "kd_io/..." and "kd_slam2/kd_io/..." are in use
+set(kd_slam2_INCLUDE_DIRS "${PACKAGE_PREFIX_DIR}/include/kd_slam2" "${PACKAGE_PREFIX_DIR}/include")
+set(kd_slam2_LIBRARIES @PACKAGE_EXPORTED_LIBRARIES@)
+include(CMakeFindDependencyMacro)
+find_dependency(Eigen3)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_dependency(Threads)
+find_dependency(OpenGL)
+find_dependency(glfw3)
+find_dependency(srrg2_core)
+find_dependency(srrg2_solver)
+include("${CMAKE_CURRENT_LIST_DIR}/kd_slam2Targets.cmake")

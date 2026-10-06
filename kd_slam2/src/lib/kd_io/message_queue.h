@@ -23,7 +23,7 @@ struct MessageQueueBounded {
   std::shared_ptr<MessageType> popT();
 
   // size accessor
-  int size() const;
+  size_t size() const;
 
   // flushes
   void setDone();

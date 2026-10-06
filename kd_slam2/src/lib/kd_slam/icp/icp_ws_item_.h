@@ -1,5 +1,5 @@
 #pragma once
-#include "cuda/cuda_common.h"
+#include "kd_slam/cuda/cuda_common.h"
 #include "icp_stats_.h"
 
 namespace kd_slam {

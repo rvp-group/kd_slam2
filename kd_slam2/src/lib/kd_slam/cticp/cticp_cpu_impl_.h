@@ -3,7 +3,7 @@
 #include <iostream>
 #include <future>
 #include "cticp_cpu_.h"
-#include "utils/stable_adder_.h"
+#include "kd_slam/utils/stable_adder_.h"
 
 
 namespace kd_slam {

@@ -2,7 +2,6 @@
 #include <functional>
 #include <memory>
 #include <string>
-#include <chrono>
 #include "kd_slam/frame/factor_base.h"
 #include "kd_slam/frame/frame_graph.h"
 #include "kd_slam/icp/tree_aligner_base_.h"

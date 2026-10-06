@@ -64,7 +64,6 @@ namespace kd_slam {
       virtual bool canCompute() const;
       virtual bool checkCompute() const;
 
-      const IsometryType& poseGlobal() const { return _floating_frame? _floating_frame->pose_in_world : _pose_in_kf;}
       int    frameCount()    const { return _frame_idx; }
       int    keyframeCount() const { return _map->frames().size(); }
       double currentStamp()  const override {
@@ -77,6 +76,7 @@ namespace kd_slam {
       void reset() override;
       void syncParams() override;
     protected:
+      const IsometryType& poseGlobal() const { return _floating_frame? _floating_frame->pose_in_world : _pose_in_kf;}
       FramePtr makeFrame(FrameTreePtr src);
       bool shouldSwitchKeyframe(const IsometryType& X, const ICPStats& stats) const;
 

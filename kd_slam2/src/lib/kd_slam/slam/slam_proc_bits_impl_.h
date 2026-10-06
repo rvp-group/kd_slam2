@@ -66,6 +66,8 @@ namespace kd_slam {
       _slam_params.loop_max_orientation_rad             = param_loop_max_orientation_deg.value() * float(M_PI / 180.);
       _slam_params.loop_consensus_max_orientation_rad   = param_loop_consensus_max_orientation_deg.value() * float(M_PI / 180.);
       _slam_params.loop_consensus_max_translation       = param_loop_consensus_max_translation.value();
+      _slam_params.loop_icp_consensus_max_orientation_rad   = param_loop_icp_consensus_max_orientation_deg.value() * float(M_PI / 180.);
+      _slam_params.loop_icp_consensus_max_translation       = param_loop_icp_consensus_max_translation.value();
       _slam_params.covariance_propagate_trans_cond_diag = param_covariance_propagate_trans_cond_diag.value();
       _slam_params.covariance_propagate_rot_cond_diag   = param_covariance_propagate_rot_cond_diag.value();
       _local_aligner = param_local_aligner.value();

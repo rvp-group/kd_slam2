@@ -34,7 +34,9 @@ namespace kd_slam {
       }
       
       std::vector<PointEntry> point_entries;
-      point_entries.resize(src.size());
+      if (_inv_space_resolution>0) {
+        point_entries.resize(src.size());
+      }
       double start_ts=0;
       if constexpr (PointTraits_::HasTimestamp) {
         start_ts=PointTraits_::stamp(src[0]);

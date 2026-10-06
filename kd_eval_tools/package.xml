@@ -7,14 +7,10 @@
   <maintainer email="grisetti@diag.uniroma1.it">giorgio</maintainer>
   <license>TODO</license>
 
-  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>cmake</buildtool_depend>
 
-  <depend>rclcpp</depend>
-  <depend>rosbag2_cpp</depend>
-  <depend>rosbag2_storage</depend>
-  <depend>sensor_msgs</depend>
 
   <export>
-    <build_type>ament_cmake</build_type>
+    <build_type>cmake</build_type>
   </export>
 </package>

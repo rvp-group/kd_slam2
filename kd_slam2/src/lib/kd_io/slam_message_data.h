@@ -5,14 +5,17 @@
 #include <vector>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
-#include "utils/geometry_.h"
-#include "utils/geometry_2d_.h"
-#include "utils/geometry_3d_.h"
+#include "kd_slam/utils/geometry_.h"
+#include "kd_slam/utils/geometry_2d_.h"
+#include "kd_slam/utils/geometry_3d_.h"
 #include "kd_slam/tree/tree_defs.h"
+#include "srrg_boss/serializable.h"
 
 struct RosHeader {
   uint64_t    stamp_ns = 0;
   std::string frame_id;
+  void serialize(srrg2_core::ObjectData&, srrg2_core::IdContext& );
+  void deserialize(srrg2_core::ObjectData&, srrg2_core::IdContext&);
 };
 
 struct ImuData {
@@ -20,6 +23,8 @@ struct ImuData {
   Eigen::Quaterniond orientation          = Eigen::Quaterniond::Identity();
   Eigen::Vector3d    angular_velocity     = Eigen::Vector3d::Zero();
   Eigen::Vector3d    linear_acceleration  = Eigen::Vector3d::Zero();
+  void serialize(srrg2_core::ObjectData&, srrg2_core::IdContext& );
+  void deserialize(srrg2_core::ObjectData&, srrg2_core::IdContext&);
 };
 
 struct OdometryData {
@@ -31,6 +36,8 @@ struct OdometryData {
   Eigen::Vector3d    linear_velocity      = Eigen::Vector3d::Zero();
   Eigen::Vector3d    angular_velocity     = Eigen::Vector3d::Zero();
   Eigen::Matrix<double,6,6> twist_covariance = Eigen::Matrix<double,6,6>::Zero();
+  void serialize(srrg2_core::ObjectData&, srrg2_core::IdContext& );
+  void deserialize(srrg2_core::ObjectData&, srrg2_core::IdContext&);
 };
 
 struct TransformData {
@@ -38,13 +45,20 @@ struct TransformData {
   std::string        child_frame_id;
   Eigen::Vector3d    translation          = Eigen::Vector3d::Zero();
   Eigen::Quaterniond rotation             = Eigen::Quaterniond::Identity();
+  void serialize(srrg2_core::ObjectData&, srrg2_core::IdContext& );
+  void deserialize(srrg2_core::ObjectData&, srrg2_core::IdContext&);
 };
 
 struct TFMessageData {
+  // header is dummy
+  RosHeader header; // dummy
   std::vector<TransformData> transforms;
+  void serialize(srrg2_core::ObjectData&, srrg2_core::IdContext& );
+  void deserialize(srrg2_core::ObjectData&, srrg2_core::IdContext&);
 };
 
 struct LaserScanData {
+  // serialization not yet implemented
   RosHeader header;
   float     angle_min       = 0.f;
   float     angle_max       = 0.f;
@@ -52,6 +66,8 @@ struct LaserScanData {
   float     range_min       = 0.f;
   float     range_max       = 0.f;
   std::vector<Eigen::Vector2f> points;   // already unprojected to (x,y)
+  void serialize(srrg2_core::ObjectData&, srrg2_core::IdContext& ); // not impl
+  void deserialize(srrg2_core::ObjectData&, srrg2_core::IdContext&); // not impl
 };
 
 struct PointXYZT {
@@ -63,21 +79,8 @@ struct PointCloudXYZTData {
   RosHeader header;
   bool has_per_point_timestamps = false;
   std::vector<PointXYZT> points;
-};
-
-struct PointLivox {
-  Eigen::Vector3f coords;
-  uint32_t t;
-  float intensity;
-  uint8_t tag;
-  uint8_t line;
-};
-
-struct PointCloudLivox {
-  RosHeader header;
-  uint64_t timebase = 0;  // abs time of first point, ns (from CustomMsg::timebase)
-  bool has_per_point_timestamps = false;
-  std::vector<PointLivox> points;
+  void serialize(srrg2_core::ObjectData&, srrg2_core::IdContext& );
+  void deserialize(srrg2_core::ObjectData&, srrg2_core::IdContext&);
 };
 
 struct PointXYT {
@@ -89,6 +92,8 @@ struct PointCloudXYTData {
   RosHeader header;
   bool has_per_point_timestamps = false;
   std::vector<PointXYT> points;
+  void serialize(srrg2_core::ObjectData&, srrg2_core::IdContext& );
+  void deserialize(srrg2_core::ObjectData&, srrg2_core::IdContext&);
 };
 
 // Flat (type-erased) descriptor message.
@@ -103,17 +108,25 @@ struct KDDescriptorData {
   int32_t     axes_canonization = -1;
   std::vector<float> root_eigenvectors;  // dim*dim, col-major
   std::vector<float> entries;            // ((1<<level)-2) * 2 * dim
+  void serialize(srrg2_core::ObjectData&, srrg2_core::IdContext& );
+  void deserialize(srrg2_core::ObjectData&, srrg2_core::IdContext&);
 };
 
 struct KDTreeData2f {
   RosHeader        header;
   std::string      src_topic;
   kd_slam::TreeCPUPoint2f tree;    // default-constructed; _points_storage=nullptr, no points
+  void serialize(srrg2_core::ObjectData&, srrg2_core::IdContext& );
+  void deserialize(srrg2_core::ObjectData&, srrg2_core::IdContext&);
+  
 };
 
 struct KDTreeData3f {
   RosHeader        header;
   std::string      src_topic;
   kd_slam::TreeCPUPoint3f tree;    // default-constructed; _points_storage=nullptr, no points
+  void serialize(srrg2_core::ObjectData&, srrg2_core::IdContext& );
+  void deserialize(srrg2_core::ObjectData&, srrg2_core::IdContext&);
+
 };
 

@@ -4,8 +4,6 @@
 #include "kd_slam/utils/voxelizer_impl_.h"
 #include "kd_slam/utils/time_utils.h"
 #include "kd_io/scan_utils_.h"
-#include <tf2/buffer_core.h>
-#include <geometry_msgs/msg/transform_stamped.hpp>
 
 namespace kd_slam {
   using namespace std;
@@ -41,9 +39,10 @@ namespace kd_slam {
     if (pts.empty()) return nullptr;
     if (on_cloud) on_cloud(pts, ts);
     if (!generator) return nullptr; 
-    auto t_tree = utils::getNow();
+    auto t0 = utils::getNow();
     auto tree_cpu = generator->makeTree(pts);
-    t_tree_ms += utils::getDurationMs(t_tree);
+    t_tree = utils::getDurationMs(t0);
+    t_tree_cum+=t_tree;
     if (!tree_cpu) return nullptr;
     auto frame        = std::make_shared<FrameTree>();
     frame->ts         = ts;
@@ -71,18 +70,23 @@ namespace kd_slam {
     auto pts = toPointsVector<PointTraits>(static_cast<const PointCloudDataType&>(*msg), -1);
     if (pts.empty()) return nullptr;
 
-    auto t_vox = utils::getNow();
+    auto t0 = utils::getNow();
+
+    applyVerticalAngleCorrection(pts);
     
     if (voxelizer)
       pts = voxelizer->voxelize(pts);
-    t_vox_ms += utils::getDurationMs(t_vox);
+    t_vox += utils::getDurationMs(t0);
+    t_vox_cum += t_vox;
     if (pts.empty()) return nullptr;
 
     if (on_cloud) on_cloud(pts, ts);
     if (!generator) return nullptr; 
-    auto t_tree = utils::getNow();
+    t0 = utils::getNow();
     auto tree_cpu = generator->makeTree(pts);
-    t_tree_ms += utils::getDurationMs(t_tree);
+    t_tree += utils::getDurationMs(t0);
+    t_tree_cum += t_tree;
+    
     if (!tree_cpu) return nullptr;
     auto frame        = std::make_shared<FrameTree>();
     frame->ts         = ts;
@@ -115,32 +119,38 @@ namespace kd_slam {
 
   template <typename NodeType_>
   void TreeLoader_<NodeType_>::_tryResolveTF() {
-    if (_tf_resolved) return;
-    if (_base_frame.empty() || _lidar_frame.empty()) return;
-    auto lookup = [&](const std::string& target, const std::string& source,
-                      Eigen::Isometry3d& out) {
-      try {
-        auto ts = _tf_buffer->lookupTransform(target, source, tf2::TimePointZero);
-        out.translation() = Eigen::Vector3d(ts.transform.translation.x,
-                                            ts.transform.translation.y,
-                                            ts.transform.translation.z);
-        out.linear() = Eigen::Quaterniond(ts.transform.rotation.w,
-                                          ts.transform.rotation.x,
-                                          ts.transform.rotation.y,
-                                          ts.transform.rotation.z).toRotationMatrix();
-      } catch (const tf2::LookupException& e) {
-        std::cerr << "[TreeLoader_] TF lookup " << source << "->" << target
-                  << " failed: " << e.what() << " -- using identity\n";
+    if (_tf_resolved)
+      return;
+
+    if (_base_frame.empty()
+        || _lidar_frame.empty())
+      return;
+    
+    bool lidar_ok=_tf_buffer.getTransform(_T_base_lidar, _base_frame,_lidar_frame);
+    if (! lidar_ok && ! _tf_lidar_warning) {
+      cerr << "missing transforms base->lidar, using identity" << endl;
+      _T_base_lidar.setIdentity();
+      _tf_lidar_warning=true;
+    }
+    bool imu_ok=true;
+    if (!_imu_frame.empty()) {
+      imu_ok=_tf_buffer.getTransform(_T_base_imu, _base_frame, _imu_frame);
+      if (! imu_ok && ! _tf_imu_warning) {
+        cerr << "missing transforms base->imu, using identity" << endl;
+        _T_base_imu.setIdentity();
+        _tf_imu_warning=true;
       }
-    };
-    lookup(_base_frame, _lidar_frame, _T_base_lidar);
-    if (!_imu_frame.empty())
-      lookup(_base_frame, _imu_frame, _T_base_imu);
-    _tf_resolved = true;
+    }
+    _tf_resolved = lidar_ok && imu_ok;
+    if (_tf_resolved){
+      cerr << "transforms ok" << endl;
+    }
   }
 
   template <typename NodeType_>
   void TreeLoader_<NodeType_>::run(bool rn) {
+    _tf_lidar_warning=false;
+    _tf_imu_warning=false;
     auto reader = param_reader.value();
     auto writer = param_writer.value();
     if (!reader) {
@@ -182,11 +192,14 @@ namespace kd_slam {
   void TreeLoader_<NodeType_>::_reader_runner(){
     pthread_setname_np(pthread_self(), "reader");
     auto reader  = param_reader.value();
-    t_read_ms=0;
+    t_read_cum=0;
+    t_read_msg=0;
     while (reader->isGood()) {
       auto t0 = utils::getNow();
       auto anon_msg = reader->readOne();
-      t_read_ms += utils::getDurationMs(t0);
+      t_read = utils::getDurationMs(t0);
+      t_read_msg += t_read;
+      t_read_cum += t_read;
       if (!anon_msg) continue;
       _reader_queue.push(anon_msg);
     }
@@ -195,10 +208,34 @@ namespace kd_slam {
   }
 
   template <typename NodeType_>
+  void TreeLoader_<NodeType_>::applyVerticalAngleCorrection(std::vector<typename PointTraits::PointType>& pts) {
+    using VectorType=typename NodeType_::VectorType;
+    if constexpr(Dim==3) {
+      Scalar pitch_correction=param_vertical_angle_offset_deg.value();
+      if (pitch_correction!=0) {
+        pitch_correction*=M_PI/180.f;
+        for (auto& pt: pts) {
+          
+          VectorType& p = PointTraits::coordinates(pt);
+          VectorType axis=p.cross(VectorType::UnitZ());
+          Scalar n=axis.norm();
+          if (n<1e-3)
+            continue;
+          axis*=1./n;
+          p=Eigen::AngleAxis<Scalar>(pitch_correction, axis)*p;
+        }
+      }
+    }
+  }
+    
+  template <typename NodeType_>
   void TreeLoader_<NodeType_>::_voxelizer_runner(){
     pthread_setname_np(pthread_self(), "voxelizer");
+
+
     auto voxelizer = param_voxelizer.value();
-    t_vox_ms=0;
+    t_vox=0;
+    t_vox_cum=0;
     std::shared_ptr<MessageBase> anon_msg;
     while ((anon_msg=_reader_queue.pop())) {
       if (auto msg = std::dynamic_pointer_cast<Message_<PointCloudDataType>>(anon_msg)) {
@@ -209,10 +246,14 @@ namespace kd_slam {
           continue;
         }
         out_msg->points = toPointsVector<PointTraits>(static_cast<const PointCloudDataType&>(*msg), -1);
-        auto t_vox = utils::getNow();
+
+        applyVerticalAngleCorrection(out_msg->points);
+        
+        auto t0 = utils::getNow();
         if (voxelizer)
           out_msg->points = voxelizer->voxelize(out_msg->points);
-        t_vox_ms += utils::getDurationMs(t_vox);
+        t_vox = utils::getDurationMs(t0);
+        t_vox_cum += t_vox;
         anon_msg=out_msg;
       } 
       _voxelizer_queue.push(anon_msg);
@@ -225,7 +266,6 @@ namespace kd_slam {
   void TreeLoader_<NodeType_>::_runner() {
     std::thread reader_thread(&TreeLoader_<NodeType_>::_reader_runner, this);
     std::thread voxelizer_thread(&TreeLoader_<NodeType_>::_voxelizer_runner, this);
-    _tf_buffer = std::make_unique<tf2::BufferCore>();
     auto writer  = param_writer.value();
     bool verbose = param_verbose.value();
 
@@ -241,26 +281,22 @@ namespace kd_slam {
              << " odom: "   << num_odoms
              << " trees: "  << num_trees
              << " tfs: "    << num_tfs
-             << " avg_read_ms: " << (num_clouds ? t_read_ms/num_clouds : 0)
-             << " avg_vox_ms: " << (num_clouds ? t_vox_ms/num_clouds : 0)
-             << " avg_tree_ms: " << (num_clouds ? t_tree_ms/num_clouds : 0);
+             << " avg_read_ms: " << (num_clouds ? t_read_cum/num_clouds : 0)
+             << " avg_vox_ms: " << (num_clouds ? t_vox_cum/num_clouds : 0)
+             << " avg_tree_ms: " << (num_clouds ? t_tree_cum/num_clouds : 0);
       }
       if (auto msg = std::dynamic_pointer_cast<Message_<TFMessageData>>(anon_msg)) {
         ++num_tfs;
         for (const auto& td : msg->transforms) {
-          geometry_msgs::msg::TransformStamped ts;
-          ts.header.frame_id      = td.header.frame_id;
-          ts.header.stamp.sec     = static_cast<int32_t>(td.header.stamp_ns / 1'000'000'000ULL);
-          ts.header.stamp.nanosec = static_cast<uint32_t>(td.header.stamp_ns % 1'000'000'000ULL);
-          ts.child_frame_id       = td.child_frame_id;
-          ts.transform.translation.x = td.translation.x();
-          ts.transform.translation.y = td.translation.y();
-          ts.transform.translation.z = td.translation.z();
-          ts.transform.rotation.x = td.rotation.x();
-          ts.transform.rotation.y = td.rotation.y();
-          ts.transform.rotation.z = td.rotation.z();
-          ts.transform.rotation.w = td.rotation.w();
-          try { _tf_buffer->setTransform(ts, "loader", true); } catch (...) {}
+          Eigen::Isometry3f iso=Eigen::Isometry3f::Identity();
+          iso.translation()=td.translation.cast<float>();
+          iso.linear()=td.rotation.toRotationMatrix().cast<float>();
+          try{
+            _tf_buffer.addTransform(td.header.frame_id, td.child_frame_id, iso);
+          }
+          catch(const std::exception& e) {
+            cerr << "tf_error: " << e.what() << endl;
+          }
         }
         if (writer) writer->write(msg->topic, msg->log_stamp_ns, *msg);
         continue;
@@ -275,6 +311,9 @@ namespace kd_slam {
           f->odometries   = odometries;  odometries.clear();
           f->T_base_lidar = transformIso_<Dim, Scalar>(_T_base_lidar);
           f->T_base_imu   = transformIso_<Dim, Scalar>(_T_base_imu);
+          auto ev=std::make_shared<EventLoadTree>(t_read_msg, t_vox, t_tree, f->ts);
+          pushEvent(ev);
+          t_read_msg=0;
           if (_frame_queue) _frame_queue->push(std::move(f));
         }
         continue;
@@ -289,6 +328,10 @@ namespace kd_slam {
           f->odometries   = odometries;  odometries.clear();
           f->T_base_lidar = transformIso_<Dim, Scalar>(_T_base_lidar);
           f->T_base_imu   = transformIso_<Dim, Scalar>(_T_base_imu);
+          auto ev=std::make_shared<EventLoadTree>(t_read_msg, 0.f, 0.f,f->ts);
+          pushEvent(ev);
+          t_read_msg=0;
+
           if (_frame_queue) _frame_queue->push(f);
         }
         continue;

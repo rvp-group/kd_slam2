@@ -33,10 +33,12 @@ target_link_libraries(kd_viewer PUBLIC
   glfw
   dl
   kd_slam_event
+  ${srrg2_solver_LIBRARIES}   # drawables include kd_slam typedefs -> solver/core headers
 )
 
 target_include_directories(kd_viewer PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/lib>
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/common>
     $<INSTALL_INTERFACE:include/kd_slam2>)
+
+# own sources include <glad/glad.h> (imgui backend): build only, not exported
+target_include_directories(kd_viewer PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

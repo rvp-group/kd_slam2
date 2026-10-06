@@ -2,8 +2,8 @@
 #include "kd_slam/d2/icp_.h"
 #include "kd_slam/cticp/cticp_.h"
 #include "kd_slam/cticp/cticp_cpu_.h"
-#include "utils/geometry_2d_.h"
-#include "utils/geometry_2d_impl_.h"
+#include "kd_slam/utils/geometry_2d_.h"
+#include "kd_slam/utils/geometry_2d_impl_.h"
 
 
 namespace kd_slam::d2 {

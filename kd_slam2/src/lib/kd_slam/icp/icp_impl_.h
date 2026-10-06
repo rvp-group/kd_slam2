@@ -4,7 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include "icp_.h"
-#include "utils/geometry_.h"
+#include "kd_slam/utils/geometry_.h"
 
 namespace kd_slam {
   namespace icp {

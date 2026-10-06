@@ -30,18 +30,15 @@ target_link_libraries(kd_slam_slam_3d
 
 target_include_directories(kd_slam_icp_3d PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/lib>
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/common>
   $<INSTALL_INTERFACE:include/kd_slam2>
 )
 
 target_include_directories(kd_slam_scanner_3d PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/lib>
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/common>
   $<INSTALL_INTERFACE:include/kd_slam2>
 )
 target_include_directories(kd_slam_slam_3d PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/lib>
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/common>
   $<INSTALL_INTERFACE:include/kd_slam2>
 )
 
@@ -64,13 +61,11 @@ target_link_libraries(kd_slam_slam_3d_cuda kd_slam_slam_3d kd_slam_icp_3d_cuda c
 
 target_include_directories(kd_slam_icp_3d_cuda PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/lib>
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/common>
   $<INSTALL_INTERFACE:include/kd_slam2>
 )
 
 target_include_directories(kd_slam_slam_3d_cuda PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/lib>
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src/common>
   $<INSTALL_INTERFACE:include/kd_slam2>
 )
 

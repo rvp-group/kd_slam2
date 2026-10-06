@@ -1,0 +1,4 @@
+@PACKAGE_INIT@
+set(kd_ouster_INCLUDE_DIRS "${PACKAGE_PREFIX_DIR}/include/kd_ouster")
+set(kd_ouster_LIBRARIES kd_ouster::tiny_ouster)
+include("${CMAKE_CURRENT_LIST_DIR}/kd_ousterTargets.cmake")

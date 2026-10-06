@@ -296,5 +296,27 @@ namespace kd_slam {
       }
     };
 
+    template <typename NodeType_>
+    struct EventLoadTree_: public Event_<NodeType_> {
+      using NodeType     = NodeType_;
+      double       t_read = 0;
+      double       t_vox  = 0;
+      double       t_tree = 0;
+      EventLoadTree_(double t_read_, double t_vox_, double t_tree_, double ts_=0):
+        Event_<NodeType_>(ts_),
+        t_read(t_read_),
+        t_vox(t_vox_),
+        t_tree(t_tree_){
+      }
+
+      void print(std::ostream& os) const override {
+        using namespace std;
+        os << "[LOAD] ts:" << fixed << setprecision(3) << this->ts
+           << " tl:" << setprecision(1) << t_read
+           << " tv:" << t_vox
+           << " tt:" << t_tree << "\n";
+      }
+    };
+
   }
 }

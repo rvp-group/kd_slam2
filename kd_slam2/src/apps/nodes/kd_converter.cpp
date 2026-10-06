@@ -7,7 +7,7 @@
 #include "kd_slam/utils/time_utils.h"
 #include "kd_slam/frame/frame_queue_bounded.h"
 #include "kd_io/tree_loader_.h"
-#include "kd_io/rosbag2_message_writer.h"
+#include "kd_io/reader_factory.h"
 #include "kd_slam/d2/typedefs.h"
 #include "kd_slam/d3/typedefs.h"
 #include "kd_slam/event/event.h"
@@ -53,7 +53,8 @@ static int run(PropertyContainerManager& manager,
                srrg2_core::ArgumentString& a_cloud_topic,
                srrg2_core::ArgumentString& a_imu_topic,
                srrg2_core::ArgumentString& a_tree_topic,
-               srrg2_core::ArgumentString& a_output) {
+               srrg2_core::ArgumentString& a_output,
+               srrg2_core::ArgumentString& a_writer) {
 
   using namespace std;
   using LoaderType      = typename AppTraits::LoaderType;
@@ -81,7 +82,10 @@ static int run(PropertyContainerManager& manager,
   if (a_output.isSet()) {
     auto writer = loader->param_writer.value();
     if (!writer) {
-      writer = std::make_shared<Rosbag2MessageWriter>();
+      writer = makeMessageWriter(a_writer.value());
+      if (! writer) {
+        throw std::runtime_error(std::string("unknown writer [")+a_writer.value()+std::string("]"));
+      }
       loader->param_writer.setValue(writer);
     }
     writer->param_out_path.setValue(a_output.value());
@@ -107,13 +111,14 @@ int main(int argc, char** argv) {
   srrg2_core::ArgumentString a_cloud_topic (&cmd, "tc",  "cloud-topic",        "name of cloud in input stream",                      "");
   srrg2_core::ArgumentString a_tree_topic (&cmd, "tt",  "tree-topic",        "name of tree in input stream",                      "");
   srrg2_core::ArgumentString a_imu_topic (&cmd, "ti",  "imu-topic",        "name of imu in input stream",                      "");
+  srrg2_core::ArgumentString a_writer (&cmd, "wr",  "Rosbag2MessageWriter",        "name of writer {Rosbag2MessageWriter,BossMessageWriter}",                      "");
   cmd.parse();
   PropertyContainerManager manager;
   cmd.summary();
   manager.read(a_config.value());
   
   if (a_2d.isSet())
-    return run<AppTraits2D>(manager, a_loader.value(), a_input, a_cloud_topic, a_imu_topic, a_tree_topic, a_output);
+    return run<AppTraits2D>(manager, a_loader.value(), a_input, a_cloud_topic, a_imu_topic, a_tree_topic, a_output, a_writer);
   else
-    return run<AppTraits3D>(manager, a_loader.value(), a_input, a_cloud_topic, a_imu_topic, a_tree_topic, a_output);
+    return run<AppTraits3D>(manager, a_loader.value(), a_input, a_cloud_topic, a_imu_topic, a_tree_topic, a_output, a_writer);
 }

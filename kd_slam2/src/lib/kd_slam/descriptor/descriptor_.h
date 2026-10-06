@@ -1,6 +1,6 @@
 #pragma once
-#include "cuda/cuda_common.h"
-#include "tree/tree_.h"
+#include "kd_slam/cuda/cuda_common.h"
+#include "kd_slam/tree/tree_.h"
 
 namespace kd_slam {
   namespace descriptor {

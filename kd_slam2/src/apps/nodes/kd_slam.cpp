@@ -1,3 +1,4 @@
+
 #include "kd_app_common_.h"
 #include "kd_slam/slam/slam_proc_.h"
 #include "kd_io/kd_state_writer_.h"
@@ -28,7 +29,8 @@ template <typename AppTraits>
 static int run(PropertyContainerManager& manager,
                const std::string&        loader_name,
                const std::string&        proc_name,
-               EventSinkType             ev_sink_type,
+               bool                      a_gl,
+               bool                      a_logger,
                ArgumentString& a_input,
                ArgumentString& a_output_tum,
                ArgumentString& a_output_state,
@@ -38,6 +40,7 @@ static int run(PropertyContainerManager& manager,
   using LoaderType      = typename AppTraits::LoaderType;
   using FrameTree       = typename AppTraits::FrameTree;
   using StateWriterType = typename AppTraits::StateWriterType;
+  using TUMWriterType   = typename AppTraits::TUMWriterType;
 
   auto loader_ = manager.getByName(loader_name);
   if (!loader_) {
@@ -70,25 +73,35 @@ static int run(PropertyContainerManager& manager,
     if (a_output_map.isSet() && !a_output_map.value().empty())
       saveMap(a_output_map.value(), *proc->map());
   };
-  runner.setup(proc, ev_sink_type, a_output_tum.isSet() ? a_output_tum.value() : "");
 
-  if (runner.viewer) {
-    //runner.viewer->on_bundle    = [&]() { proc->bundle(); };
-    //runner.viewer->on_ct_bundle = [&]() { proc->bundleCT(); };
-    runner.viewer->on_map_save  = runner.on_map_save;
+  list<event::EventSinkPtr> sinks;
+  if (a_gl)     sinks.push_back(make_shared<typename AppTraits::GLDrawableType>());
+  if (a_logger) sinks.push_back(make_shared<typename AppTraits::LoggerType>());
+
+  shared_ptr<TUMWriterType> tum_writer;
+  ofstream os_tum;
+  if (a_output_tum.isSet()) {
+    os_tum.open(a_output_tum.value());
+    tum_writer = make_shared<TUMWriterType>();
+    tum_writer->output_stream = &os_tum;
+    sinks.push_back(tum_writer);
   }
-  
-  // state writer is runner-specific; wire it after setup
+
   shared_ptr<StateWriterType> state_writer;
   ofstream os_state;
   if (a_output_state.isSet()) {
     os_state.open(a_output_state.value());
     state_writer = make_shared<StateWriterType>();
     state_writer->output_stream = &os_state;
-    if (runner.ev_queue)
-      runner.ev_queue->event_sinks.push_back(state_writer);
-    else
-      proc->event_sinks.push_back(state_writer);
+    sinks.push_back(state_writer);
+  }
+
+  runner.setup(proc, loader, sinks);
+
+  if (runner.viewer) {
+    //runner.viewer->on_bundle    = [&]() { proc->bundle(); };
+    //runner.viewer->on_ct_bundle = [&]() { proc->bundleCT(); };
+    runner.viewer->on_map_save  = runner.on_map_save;
   }
 
   bool first_frame=true;
@@ -127,22 +140,23 @@ int main(int argc, char** argv) {
   ArgumentString a_loader      (&cmd, "L",    "loader",          "name of loader in config",      "loader");
   ArgumentString a_proc        (&cmd, "p",    "proc",            "name of processor in config",   "sink");
   ArgumentFlag   a_2d          (&cmd, "2",    "two-dim",         "use 2D pipeline");
-  ArgumentInt    a_viewer      (&cmd, "V",    "viewer",          "0:disabled 1:logger 2:GL",      0);
+  ArgumentFlag   a_gl          (&cmd, "g",    "gl",              "enable GL viewer");
+  ArgumentFlag   a_logger      (&cmd, "l",    "logger",          "enable event logger to stderr");
   ArgumentString a_input       (&cmd, "i",    "input",           "input bag or mcap file",        "");
   ArgumentString a_output_tum  (&cmd, "ot",   "output-tum",      "output TUM trajectory",         "");
   ArgumentString a_output_state(&cmd, "os",   "output-state",    "output state filename",         "");
   ArgumentString a_output_map  (&cmd, "om",   "output-map",      "output map filename",           "");
   cmd.parse();
 
-  EventSinkType ev_sink_type = parseViewerArg(a_viewer);
-  std::cerr << "Viewer: [" << sink2str[a_viewer.value()] << "]\n";
   PropertyContainerManager manager;
   cmd.summary();
   manager.read(a_config.value());
 
   if (a_2d.isSet())
-    return run<AppTraits2D>(manager, a_loader.value(), a_proc.value(), ev_sink_type,
+    return run<AppTraits2D>(manager, a_loader.value(), a_proc.value(),
+                            a_gl.isSet(), a_logger.isSet(),
                             a_input, a_output_tum, a_output_state, a_output_map);
-  return run<AppTraits3D>(manager, a_loader.value(), a_proc.value(), ev_sink_type,
+  return run<AppTraits3D>(manager, a_loader.value(), a_proc.value(),
+                          a_gl.isSet(), a_logger.isSet(),
                           a_input, a_output_tum, a_output_state, a_output_map);
 }

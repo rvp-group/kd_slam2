@@ -1,6 +1,6 @@
 #pragma once
-#include "message_writer.h"
-#include "slam_messages.h"
+#include "kd_io/message_writer.h"
+#include "kd_io/slam_messages.h"
 #include <rosbag2_cpp/writer.hpp>
 #include <functional>
 #include <set>
@@ -19,7 +19,7 @@ public:
   Rosbag2MessageWriter();
 
   void open() override;
-  void write(const std::string& topic, uint64_t ts_ns, const MessageBase& msg) override;
+  void write(const std::string& topic, uint64_t ts_ns, MessageBase& msg) override;
   bool isOpen() const override { return _open; }
   void close() override;
 

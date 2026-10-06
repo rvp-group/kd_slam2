@@ -65,7 +65,7 @@ namespace kd_slam {
     using LoaderTraits = KDTreeLoaderTraits_<NodeType_>;
     using TreeDataType = typename LoaderTraits::TreeDataType;
     using TreeCPUType  = typename LoaderTraits::TreeType;
-    auto reader = makeRosbag2Reader(tree_filename, {"/keyframes"});
+    auto reader = makeMessageReader("Rosbag2MessageReader", tree_filename, {"/keyframes"});
     reader->open();
     while (reader->isGood()) {
       auto anon = reader->readOne();
@@ -152,7 +152,7 @@ namespace kd_slam {
     using TreeDataType = typename LoaderTraits::TreeDataType;
     using TreeCPUType  = typename LoaderTraits::TreeType;
 
-    auto writer = makeRosbag2Writer(tree_filename);
+    auto writer = makeMessageWriter("Rosbag2MessageWriter", tree_filename);
     writer->open();
     for (auto [ref, frame_] : m.frames()) {
       auto frame = std::dynamic_pointer_cast<Frame>(frame_);

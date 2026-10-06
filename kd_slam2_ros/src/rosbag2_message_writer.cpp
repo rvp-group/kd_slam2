@@ -193,7 +193,7 @@ void Rosbag2MessageWriter::open() {
 
 void Rosbag2MessageWriter::write(const std::string& topic,
                                   uint64_t ts_ns,
-                                  const MessageBase& msg) {
+                                  MessageBase& msg) {
   if (!_open) return;
   auto it = _type_handlers.find(typeid(msg));
   if (it == _type_handlers.end()) return;

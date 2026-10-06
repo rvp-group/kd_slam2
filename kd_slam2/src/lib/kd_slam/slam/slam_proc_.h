@@ -58,6 +58,47 @@ namespace kd_slam {
       using EventLoopSearch    = EventLoopSearch_<NodeType>;
       using EventRelocalize    = EventRelocalize_<NodeType>;
 
+
+      void addFrame(const FrameTreePtr& src) override;
+      void reset()        override;
+      bool canCompute()   const override;
+      bool checkCompute() const override;
+      bool isGPU()        const override;
+      void syncParams()   override;
+      
+      SLAMParams _slam_params;
+
+      PARAM(srrg2_core::PropertyFloat, relocalize_max_chi2,          "max chi2 to accept relocalization",             100.f, &_param_changed);
+      PARAM(srrg2_core::PropertyInt,   relocalize_max_hops,          "max BFS hops for relocalization (-1=no limit)",  40,   &_param_changed);
+      PARAM(srrg2_core::PropertyFloat, relocalize_min_inliers_ratio, "min inlier ratio to accept relocalization",      0.7f, &_param_changed);
+      PARAM(srrg2_core::PropertyFloat, relocalize_min_score,         "min relocalization score",                       40.f, &_param_changed);
+      PARAM(srrg2_core::PropertyFloat, relocalize_slack,             "covariance slack for chi2 test",                 1.0f, &_param_changed);
+      PARAM(srrg2_core::PropertyFloat, relocalize_min_coverage,      "min coverage to relocalize onto an existing kf", 0.0, &_param_changed);
+      
+      PARAM(srrg2_core::PropertyFloat, loop_max_chi2,                "max chi2 for loop closure candidate",           100.f, &_param_changed);
+      PARAM(srrg2_core::PropertyInt,   loop_min_hops,                "min BFS hops to consider loop closure",          40,   &_param_changed);
+      PARAM(srrg2_core::PropertyFloat, loop_consensus_max_orientation_deg,     "max orientation in the descriptor consensus [deg]",              10.f, &_param_changed);
+      PARAM(srrg2_core::PropertyFloat, loop_consensus_max_translation,     "max translation in the descriptor consensus [m]", 0.5f, &_param_changed);
+      PARAM(srrg2_core::PropertyFloat, loop_icp_consensus_max_orientation_deg,     "max orientation in the icp consensus [deg]",              2.f, &_param_changed);
+      PARAM(srrg2_core::PropertyFloat, loop_icp_consensus_max_translation,     "max translation in the icp consensus [m]", 0.1f, &_param_changed);
+      PARAM(srrg2_core::PropertyFloat, loop_max_orientation_deg,     "max orientation discrepancy [deg]",              10.f, &_param_changed);
+      PARAM(srrg2_core::PropertyFloat, loop_min_inliers_ratio,       "min inlier ratio for loop closure",              0.7f, &_param_changed);
+      PARAM(srrg2_core::PropertyFloat, loop_min_score,               "min score for loop closure",                     40.f, &_param_changed);
+      PARAM(srrg2_core::PropertyFloat, loop_slack,                   "covariance slack for loop chi2 test",            1.0f, &_param_changed);
+      PARAM(srrg2_core::PropertyFloat, loop_min_coverage,            "min coverage between floating frame and match kf",                     0.5, &_param_changed);
+      
+      PARAM(srrg2_core::PropertyFloat, factor_max_chi2,              "max chi2 for factor creation",                  100.f, &_param_changed);
+      PARAM(srrg2_core::PropertyFloat, factor_min_inliers_ratio,     "min inlier ratio for factor creation",           0.3f, &_param_changed);
+      PARAM(srrg2_core::PropertyFloat, factor_min_score,             "min score for factor creation",                  0.1f, &_param_changed);
+      PARAM(srrg2_core::PropertyFloat, factor_slack,                 "covariance slack for factor chi2 test",          0.5f, &_param_changed);
+      PARAM(srrg2_core::PropertyFloat, covariance_propagate_trans_cond_diag, "translational condition number diagonal", 0.05f,  &_param_changed);
+      PARAM(srrg2_core::PropertyFloat, covariance_propagate_rot_cond_diag,   "rotational condition number diagonal",   0.001f, &_param_changed);
+      PARAM(srrg2_core::PropertyConfigurable_<AlignerBase>, local_aligner, "local aligner",        nullptr, &_param_changed);
+      PARAM(srrg2_core::PropertyConfigurable_<AlignerBase>, loop_aligner,  "loop closure aligner", nullptr, &_param_changed);
+
+      DescriptorMatcher& descriptorMatcher() { return *_descriptor_matcher; }
+      void printLoopStats(std::ostream& os);
+    protected:
       using BaseType::poseGlobal;
       using BaseType::frameCount;
       using BaseType::makeFrame;
@@ -88,44 +129,6 @@ namespace kd_slam {
       using BaseType::_descriptor_matcher;
       using BaseType::_motion_model;
       using BaseType::_t_align;
-      void addFrame(const FrameTreePtr& src) override;
-      void reset()        override;
-      bool canCompute()   const override;
-      bool checkCompute() const override;
-      bool isGPU()        const override;
-      void syncParams()   override;
-      
-      SLAMParams _slam_params;
-
-      PARAM(srrg2_core::PropertyFloat, relocalize_max_chi2,          "max chi2 to accept relocalization",             100.f, &_param_changed);
-      PARAM(srrg2_core::PropertyInt,   relocalize_max_hops,          "max BFS hops for relocalization (-1=no limit)",  40,   &_param_changed);
-      PARAM(srrg2_core::PropertyFloat, relocalize_min_inliers_ratio, "min inlier ratio to accept relocalization",      0.7f, &_param_changed);
-      PARAM(srrg2_core::PropertyFloat, relocalize_min_score,         "min relocalization score",                       40.f, &_param_changed);
-      PARAM(srrg2_core::PropertyFloat, relocalize_slack,             "covariance slack for chi2 test",                 1.0f, &_param_changed);
-      PARAM(srrg2_core::PropertyFloat, relocalize_min_coverage,      "min coverage to relocalize onto an existing kf", 0.0, &_param_changed);
-      
-      PARAM(srrg2_core::PropertyFloat, loop_max_chi2,                "max chi2 for loop closure candidate",           100.f, &_param_changed);
-      PARAM(srrg2_core::PropertyInt,   loop_min_hops,                "min BFS hops to consider loop closure",          40,   &_param_changed);
-      PARAM(srrg2_core::PropertyFloat, loop_consensus_max_orientation_deg,     "max orientation in the descriptor consensus [deg]",              10.f, &_param_changed);
-      PARAM(srrg2_core::PropertyFloat, loop_consensus_max_translation,     "max translation in the descriptor consensus [m]", 0.5f, &_param_changed);
-      PARAM(srrg2_core::PropertyFloat, loop_max_orientation_deg,     "max orientation discrepancy [deg]",              10.f, &_param_changed);
-      PARAM(srrg2_core::PropertyFloat, loop_min_inliers_ratio,       "min inlier ratio for loop closure",              0.7f, &_param_changed);
-      PARAM(srrg2_core::PropertyFloat, loop_min_score,               "min score for loop closure",                     40.f, &_param_changed);
-      PARAM(srrg2_core::PropertyFloat, loop_slack,                   "covariance slack for loop chi2 test",            1.0f, &_param_changed);
-      PARAM(srrg2_core::PropertyFloat, loop_min_coverage,            "min coverage between floating frame and match kf",                     0.5, &_param_changed);
-      
-      PARAM(srrg2_core::PropertyFloat, factor_max_chi2,              "max chi2 for factor creation",                  100.f, &_param_changed);
-      PARAM(srrg2_core::PropertyFloat, factor_min_inliers_ratio,     "min inlier ratio for factor creation",           0.3f, &_param_changed);
-      PARAM(srrg2_core::PropertyFloat, factor_min_score,             "min score for factor creation",                  0.1f, &_param_changed);
-      PARAM(srrg2_core::PropertyFloat, factor_slack,                 "covariance slack for factor chi2 test",          0.5f, &_param_changed);
-      PARAM(srrg2_core::PropertyFloat, covariance_propagate_trans_cond_diag, "translational condition number diagonal", 0.05f,  &_param_changed);
-      PARAM(srrg2_core::PropertyFloat, covariance_propagate_rot_cond_diag,   "rotational condition number diagonal",   0.001f, &_param_changed);
-      PARAM(srrg2_core::PropertyConfigurable_<AlignerBase>, local_aligner, "local aligner",        nullptr, &_param_changed);
-      PARAM(srrg2_core::PropertyConfigurable_<AlignerBase>, loop_aligner,  "loop closure aligner", nullptr, &_param_changed);
-
-      DescriptorMatcher& descriptorMatcher() { return *_descriptor_matcher; }
-      void printLoopStats(std::ostream& os);
-    protected:
       using Match = FrameMatch_<NodeType>;
       void propagateCovarianceAndDistance();
       bool addFactor(PGOFactorPtr f);

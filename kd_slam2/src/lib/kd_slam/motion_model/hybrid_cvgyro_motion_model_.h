@@ -70,8 +70,6 @@ namespace kd_slam{
           _T_delta_log.template tail<3>()=dr;
         }
       }
-      // called by the owner when  a new keyframe is created
-      void onKeyframe(const IsometryType& pose_in_kf = IsometryType::Identity()) override {} 
 
       void reset() override {
         _last_ts=-1;

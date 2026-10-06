@@ -220,7 +220,21 @@ void dumpResults(std::ostream& os, const ResultMap& ate, const ResultMap& rpe, c
 Eigen::Vector2f rmse(const ResultMap& src) {
   Eigen::Vector2d sum=Eigen::Vector2d::Zero();
   for (const auto& s: src) {
-    sum+= (s.second).error.cast<double>();
+    sum.x()+= s.second.error.x()*s.second.error.x();
+    sum.y()+= s.second.error.y()*s.second.error.y();
+  }
+  if (src.size())
+    sum *= (1./src.size());
+  sum(0)=sqrt(sum(0));
+  sum(1)=sqrt(sum(1));
+  return sum.cast<float>();
+}
+
+Eigen::Vector2f rootMean(const ResultMap& src) {
+  Eigen::Vector2d sum=Eigen::Vector2d::Zero();
+  for (const auto& s: src) {
+    sum.x()+= s.second.error.x();
+    sum.y()+= s.second.error.y();
   }
   if (src.size())
     sum *= (1./src.size());
@@ -298,7 +312,7 @@ bool TrajectoryEvaluator::eval(std::ostream& log, double ts_min, double ts_max) 
   ev=ev_loaded.clipRange(ts_min, ts_max);
   gt=gt_loaded.clipRange(ts_min, ts_max);
   
-  Eigen::Vector2f dest_ate, dest_le, dest_rpe;
+  Eigen::Vector2f dest_mean, dest_rmse, dest_le, dest_rpe;
   gt.enable_interpolation=interpolate_on;
   log << "Computing transform " << align_stretch << endl;
   auto T=gt.computeAlignment(ev, log, false, align_stretch);
@@ -309,11 +323,17 @@ bool TrajectoryEvaluator::eval(std::ostream& log, double ts_min, double ts_max) 
   ate.clear();
   rpe.clear();
   le.clear();
-  log << "Computing ATE" << endl;
+  log << "Computing ATE (VBR)" << endl;
   computeATE(ate, gt, ev);
-  dest_ate=rmse(ate);
-  log << "ATE [R, T]: " << dest_ate.transpose() 
+  dest_mean=rootMean(ate);
+  log << "ATE_VBR [R, T]: " << dest_mean.transpose() 
       << " POSES: " << ate.size() << "/" << gt.size() <<endl;
+  
+  log << "Computing RMSE" << endl;
+  dest_rmse=rmse(ate);
+  log << "ATE_RMSE [R, T]: " << dest_rmse.transpose() 
+      << " POSES: " << ate.size() << "/" << gt.size() <<endl;
+  
   log << "Computing RPE"  << endl;
   if (! disable_bench && (ate.size()!=gt.size())) {
     log << "BENCH MODE ON and the trajectories do not match. The result will not be considered" << endl;

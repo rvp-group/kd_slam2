@@ -1,5 +1,5 @@
 #pragma once
-#include "cuda/cuda_common.h"
+#include "kd_slam/cuda/cuda_common.h"
 #include "tree_cuda_.h"
 #include "tree_predicates_.h"
 #include "tree_cpu_.h"

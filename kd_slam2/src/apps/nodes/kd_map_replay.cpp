@@ -77,7 +77,8 @@ struct KDMapReplay_ :
 template <typename NodeType_>
 static int run(const std::string& kf_file,
                const std::string& boss_file,
-               const std::string& tum_file) {
+               const std::string& tum_file,
+               bool kf_only) {
   using TUMWriterType = KDTumWriter_<NodeType_>;
 
   KDMapReplay_<NodeType_> reader;
@@ -93,6 +94,7 @@ static int run(const std::string& kf_file,
   }
 
   auto tum_writer = std::make_shared<TUMWriterType>();
+  tum_writer->kf_only=kf_only;
   tum_writer->output_stream = &os_tum;
   reader.event_sinks.push_back(tum_writer);
 
@@ -109,6 +111,7 @@ int main(int argc, char** argv) {
   srrg2_core::ArgumentString a_kf  (&cmd, "is", "input-state", "input state file (.kf)",                "");
   srrg2_core::ArgumentString a_map (&cmd, "im", "input-map",   "map prefix (loads <prefix>_map.boss)",  "");
   srrg2_core::ArgumentString a_tum (&cmd, "ot", "output-tum",  "output TUM trajectory file",            "");
+  srrg2_core::ArgumentFlag a_kf_only (&cmd, "kfo", "keyframes-only",  "output only the keyframes");
   srrg2_core::ArgumentFlag   a_2d  (&cmd, "2",  "two-dim",     "use 2D pipeline");
   cmd.parse();
 
@@ -121,7 +124,7 @@ int main(int argc, char** argv) {
   const std::string boss_file = a_map.value() + "_map.boss";
 
   if (a_2d.isSet())
-    return run<d2::NodeType>(a_kf.value(), boss_file, a_tum.value());
+    return run<d2::NodeType>(a_kf.value(), boss_file, a_tum.value(), a_kf_only.isSet());
   else
-    return run<d3::NodeType>(a_kf.value(), boss_file, a_tum.value());
+    return run<d3::NodeType>(a_kf.value(), boss_file, a_tum.value(), a_kf_only.isSet());
 }

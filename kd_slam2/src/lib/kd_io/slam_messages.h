@@ -1,20 +1,38 @@
 #pragma once
-#include "slam_messages.h"
 #include "kd_slam/frame/frame_tree_.h"
+#include "srrg_boss/serializable.h"
+
+struct RosHeader;
 
 // ---------------------------------------------------------------------------
 // Base + wrapper
 // ---------------------------------------------------------------------------
-struct MessageBase {
+struct MessageBase: public srrg2_core::Serializable {
   uint64_t    file_offset   = 0;
   uint64_t    log_stamp_ns  = 0;
   std::string topic;
   virtual ~MessageBase() = default;
+  virtual RosHeader& getHeader() = 0;
+  void serialize(srrg2_core::ObjectData& data, srrg2_core::IdContext& context) override;
+  void deserialize(srrg2_core::ObjectData& data, srrg2_core::IdContext& context) override;
+
 };
 
 template<typename T>
 struct Message_ : public MessageBase, public T {
   using DataType = T;
+  RosHeader& getHeader() override {return T::header;}
+  Message_()=default;
+  Message_(const T& base): T(base){}
+  void serialize(srrg2_core::ObjectData& odata, srrg2_core::IdContext& context) override {
+    MessageBase::serialize(odata, context);
+    DataType::serialize(odata, context);
+  }
+  void deserialize(srrg2_core::ObjectData& odata, srrg2_core::IdContext& context) override{
+    MessageBase::deserialize(odata, context);
+    DataType::deserialize(odata, context);
+  }
+  
 };
 
 

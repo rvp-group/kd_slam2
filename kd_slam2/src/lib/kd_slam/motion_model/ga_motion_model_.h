@@ -43,8 +43,8 @@ namespace kd_slam{
         Base::doUpdate(delta, sigma);
         filter.update(_last_ts, TrackerType::GeometryTraits::logmap(delta));
       }
-      // called by the owner when  a new keyframe is created
-      void onKeyframe(const IsometryType& pose_in_kf = IsometryType::Identity()) override {} 
+      // called by the owner when  a keyframe is created/switched/loop_closed
+      void onOriginReset(const IsometryType& pose_in_kf = IsometryType::Identity()) override {} 
 
       void reset() override {
         filter.reset(true);

@@ -1,9 +1,9 @@
 #pragma once
-#include "cuda/cuda_common.h"
+#include "kd_slam/cuda/cuda_common.h"
 #include <Eigen/Core>
 #include <atomic>
 #include <type_traits>
-#include "utils/geometry_.h"
+#include "kd_slam/utils/geometry_.h"
 
 namespace kd_slam {
 

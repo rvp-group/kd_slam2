@@ -12,7 +12,9 @@ namespace kd_slam{
       using Frame        = typename TrackerType::Frame;
       static constexpr int Dim = TrackerType::NodeType::Dim;
       PARAM(srrg2_core::PropertyString, log_file, "file where to log the ",  "",  &_param_changed);
-      
+
+      // this is the prediction of the motion
+      // w.r.t. X_ref, which is where the integration begins
       virtual IsometryType prediction()   {return IsometryType::Identity();}
       virtual PoseHessianType predictionCovariance() { return PoseHessianType::Zero();}
 
@@ -29,6 +31,8 @@ namespace kd_slam{
         }
       }
 
+      //called before ICP runs, integrates all the goodies
+      //in the frame (imu, odometry etc), depending on the model
       virtual void doPredict(const Frame& frame) {
         if(_last_ts<0) {
           _frame_duration=0;
@@ -51,17 +55,22 @@ namespace kd_slam{
         _last_ts=-1;
         _frame_duration=0;
       }
-      // called by the owner when  a new keyframe is created
-      virtual void onKeyframe(const IsometryType& pose_in_kf = IsometryType::Identity()){} 
       
       // called by the owner when a keyframe is switched
       // that includes
       // - creation
       // - relocalization
       // - loop closure
+      // resets the integration origin to the relocalized frame
+      // the predictions are done in the reference frame of the leading keyframe
+      // as X_ref*integrated z
       virtual void onOriginReset(const IsometryType& pose_in_kf = IsometryType::Identity()){}
+
+      // returns the origin of the integration
       virtual IsometryType    priorXRef()        const { return IsometryType::Identity(); }
+      // this is hte predicted pose
       virtual IsometryType    priorZ()           const { return IsometryType::Identity(); }
+      // omega w.r.t. integration origin
       virtual PoseHessianType priorOmega()       const { return PoseHessianType::Zero(); }
      
       void setTracker(TrackerType* t) {_tracker=t;}

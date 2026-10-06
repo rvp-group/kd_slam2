@@ -3,10 +3,9 @@ set(SLAM_LIBS
   -Wl,--no-as-needed      
   kd_slam_3d_library
   kd_slam_2d_library
-  -Wl,--as-needed
 )
 
-
+list(APPEND SLAM_LIBS -Wl,--as-needed)
 
 add_executable(kd_slam kd_slam.cpp)
 target_link_libraries(kd_slam ${SLAM_LIBS} )
@@ -19,3 +18,6 @@ target_link_libraries(kd_converter ${SLAM_LIBS} )
 
 add_executable(kd_map_replay kd_map_replay.cpp)
 target_link_libraries(kd_map_replay ${SLAM_LIBS} )
+
+add_executable(kd_translator kd_translator.cpp)
+target_link_libraries(kd_translator ${SLAM_LIBS} )

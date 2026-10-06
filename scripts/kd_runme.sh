@@ -108,7 +108,7 @@ delete_map() {
 
 is_handheld() {
   case $1 in
-    diag_*|colosseo_*|pincio_*|spagna_*) return 0 ;;
+    diag_*|colosseo_*|pincio_*|spagna_*|cloister*|math_hard*|mine_hard*|park*|quad_hard*|stairs*) return 0 ;;
     *) return 1 ;;
   esac
 }

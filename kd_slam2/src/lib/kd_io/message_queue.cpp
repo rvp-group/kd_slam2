@@ -19,7 +19,7 @@ std::shared_ptr<MessageBase> MessageQueueBounded::pop()  {
   return f;
 }
 
-int MessageQueueBounded::size() const  {return q.size();}
+size_t MessageQueueBounded::size() const  {return q.size();}
 
 void MessageQueueBounded::setDone() {
   std::lock_guard<std::mutex> lk(mtx);

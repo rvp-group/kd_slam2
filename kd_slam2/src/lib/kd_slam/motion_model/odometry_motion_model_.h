@@ -53,9 +53,6 @@ namespace kd_slam {
         _integrator.onUpdate();
       }
 
-      void onKeyframe(const IsometryType& pose_in_kf = IsometryType::Identity()) override {
-        onOriginReset(pose_in_kf);
-      }
 
       void onOriginReset(const IsometryType& pose_in_kf = IsometryType::Identity()) override {
         _pose_prior_ref_in_kf = pose_in_kf;

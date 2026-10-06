@@ -1,7 +1,7 @@
 #include "icp_.h"
 #include "kd_slam/icp/icp_impl_.h"
 #include "kd_slam/icp/icp_cpu_impl_.h"
-#include "utils/geometry_3d_impl_.h"
+#include "kd_slam/utils/geometry_3d_impl_.h"
 #include "typedefs.h"
 
 namespace kd_slam {

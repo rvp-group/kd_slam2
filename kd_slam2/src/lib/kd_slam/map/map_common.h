@@ -44,6 +44,8 @@ namespace kd_slam {
     Scalar loop_consensus_max_orientation_rad   = (M_PI / 180.f) * 10.f;
     Scalar loop_consensus_max_translation       = 0.5;
     //Scalar loop_max_translation               = 10.f;
+    Scalar loop_icp_consensus_max_translation   = 0.1;
+    Scalar loop_icp_consensus_max_orientation_rad = 2*M_PI/180.;
     Scalar covariance_propagate_trans_cond_diag = 0.05f;
     Scalar covariance_propagate_rot_cond_diag   = 0.001f;
   };
@@ -101,6 +103,7 @@ namespace kd_slam {
     MatchLoopGraphFail,
     MatchLoopICPFloatFail,
     MatchLoopICPKFFail,
+    MatchLoopICPConsensusFail,
     MatchUndetermined
   };
 
@@ -117,6 +120,7 @@ namespace kd_slam {
     "MatchLoopGraphFail",
     "MatchLoopICPFloatFail",
     "MatchLoopICPKFFail",
+    "MatchLoopICPConsensusFail",
     "MatchUndetermined"
   };
 

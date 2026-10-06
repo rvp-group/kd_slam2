@@ -1,7 +1,7 @@
 #pragma once
 #include <Eigen/Eigenvalues>
 #include <future>
-#include "utils/stable_adder_.h"
+#include "kd_slam/utils/stable_adder_.h"
 #include "label_policy_base_.h"
 #include "label_policy_base_impl_.h"
 

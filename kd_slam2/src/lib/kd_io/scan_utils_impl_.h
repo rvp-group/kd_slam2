@@ -32,24 +32,6 @@ namespace kd_slam {
     }
     return pts;
   }
-
-  template <typename PointTraits_>
-  std::vector<typename PointTraits_::PointType>
-  toPointsVector(const PointCloudLivox& msg, double /*scan_duration*/) {
-    using PointType = typename PointTraits_::PointType;
-    std::vector<PointType> pts;
-    pts.reserve(msg.points.size());
-    for (const auto& pt : msg.points) {
-      if (! pt.coords.allFinite())
-        continue;
-      PointType p;
-      PointTraits_::coordinates(p) = pt.coords;
-      if constexpr (PointTraits_::HasTimestamp)
-        PointTraits_::stamp(p) = (msg.timebase + pt.t) * 1e-9;
-      pts.push_back(p);
-    }
-    return pts;
-  }
  
 
 } // namespace kd_slam

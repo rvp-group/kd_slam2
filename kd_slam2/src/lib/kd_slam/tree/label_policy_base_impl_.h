@@ -1,9 +1,8 @@
 #pragma once
 #include <Eigen/Eigenvalues>
+#include "kd_slam/utils/stable_adder_.h"
 #include "label_policy_base_.h"
-#include "utils/stable_adder_.h"
 #include "node_.h"
-#include <Eigen/Eigenvalues>
 #include "label_policy_base_.h"
 
 namespace kd_slam {

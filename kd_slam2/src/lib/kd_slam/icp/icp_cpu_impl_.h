@@ -4,7 +4,7 @@
 #include <iostream>
 #include <future>
 #include "icp_cpu_.h"
-#include "utils/stable_adder_.h"
+#include "kd_slam/utils/stable_adder_.h"
 #include "icp_impl_.h"
 
 namespace kd_slam {
