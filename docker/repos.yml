@@ -1,8 +1,4 @@
 repositories:
-  srrg_cmake_modules:
-    type: git
-    url: https://gitlab.com/srrg-software/srrg_cmake_modules.git
-    version: ros2
   srrg2_core:
     type: git
     url: https://gitlab.com/srrg-software/srrg2_core.git

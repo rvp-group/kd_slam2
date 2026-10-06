@@ -16,11 +16,24 @@ one KD-Tree to close the loops and in the map bind them.
 **System dependencies**
 
 ```bash
-apt install libeigen3-dev libopencv-dev libsuitesparse-dev \
+sudo apt install libeigen3-dev libopencv-dev libsuitesparse-dev \
             libglfw3-dev libgl-dev freeglut3-dev \
             libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev \
             liblz4-dev libzstd-dev libqglviewer-dev-qt5 python3-vcstool \
-            python3-colcon-common-extensions
+            python3-colcon-common-extensions \
+            ros-jazzy-rosbag2-cpp \
+            ros-jazzy-sensor-msgs \
+            ros-jazzy-tf2 \
+            ros-jazzy-tf2-msgs \
+            ros-jazzy-pcl-conversions \
+            ros-jazzy-pcl-ros \
+            ros-jazzy-cv-bridge \
+            ros-jazzy-image-transport \
+            ros-jazzy-nav-msgs \
+            ros-jazzy-std-msgs \
+            ros-jazzy-rosbag2-transport \
+            ros-jazzy-rosbag2-storage \
+            ros-jazzy-rcl-interfaces 
 ```
 
 **Workspace setup**
@@ -38,6 +51,42 @@ git clone https://github.com/rvp-group/kd_slam2
 cd ~/ws
 source /opt/ros/jazzy/setup.bash
 colcon build --cmake-args -DHAVE_CUDA=OFF
+```
+
+Set `-DHAVE_CUDA=ON` for CUDA support.
+
+
+---
+
+## Build (native, no ros)
+
+**System dependencies (no ros)**
+
+```bash
+sudo apt install libeigen3-dev libopencv-dev libsuitesparse-dev \
+            libglfw3-dev libgl-dev freeglut3-dev \
+            libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev \
+            liblz4-dev libzstd-dev libqglviewer-dev-qt5 \
+            vcstool colcon
+```
+
+**Workspace setup (no ros)**
+
+```bash
+mkdir -p ~/ws/src
+cd ~/ws/src
+git clone https://github.com/rvp-group/kd_slam2
+./kd_slam2/scripts/srrg_pull.sh
+```
+
+**Build (Native, no ros)**
+
+```bash
+cd ~/ws
+colcon build \
+ --packages-skip kd_slam2_msgs srrg2_core_msgs \
+   kd_slam2_ros srrg2_core_ros \
+ --cmake-args -DHAVE_CUDA=OFF
 ```
 
 Set `-DHAVE_CUDA=ON` for CUDA support.
@@ -87,15 +136,26 @@ sudo systemctl restart docker
 
 | binary | purpose |
 |---|---|
-| `srrg2_config_visualizer` | visual IDE for BOSS pipelines: load shared libs, browse and instantiate configurables, wire up processing graphs, edit parameters, save configs |
+| `srrg2_config_visualizer` | aliased as confviz: visual IDE for BOSS pipelines: load shared libs, browse and instantiate configurables, wire up processing graphs, edit parameters, save configs  |
 | `kd_converter` | preprocess a raw bag into a tree bag (run once per sequence) |
 | `kd_slam` | run SLAM on a bag or a tree bag; outputs map, keyframes, and TUM trajectory |
 | `kd_bundler` | load a map, run bundle adjustment, write a refined map |
 | `kd_map_replay` | replay keyframes through a map to extract a final TUM trajectory |
 | `traj_compare` | compute ATE/RPE against a ground-truth TUM file |
+| `ouserver` | lightweight ouster server, can record logs in raw udp format |
+| `ouread`   | reader for ouster logs |
+| `kd_live`   | live player from ouster (either the raw udp dump or the connected device) |
 
 All binaries are on PATH after sourcing `kd_slam_setup.bash`.
 Use `-h` to list command line parameters.
+
+### Dynamic Loading
+The system operates with dynamic loading of objects listed in a `dl.conf`. The tools crawl
+from the current folder to /, looking for this file. 
+`kd_slam_setup.bash` installs a copy in your home, if not present.
+ To use the ROS layer (reading/writing rosbags), `dl.conf` must list
+ `kd_slam2_ros/lib/libkd_io_rosbag.so`. If your `~/dl.conf` predates v2.4, add that
+ entry or delete the file and source the setup script again.
 
 ### Config visualizer
 
@@ -107,7 +167,6 @@ to outputs, set parameters, and save the result as a `.conf` file -- without
 touching BOSS JSON by hand. Don't do that.
 The configs in `kd_slam2/configs/` were built with
 it and can be opened and modified from it.
-
 After sourcing the setup script, launch it with:
 
 ```bash
@@ -117,7 +176,7 @@ confviz -c $KD_SLAM_CONFIGS/kd_slam_icp_drive.conf
 ### Viewer
 
 
-Pass `-V 2` to `kd_slam` or `kd_bundler` to open the 3D viewer.
+Pass `-g` to `kd_slam` or `kd_bundler` to open the 3D viewer.
 Data starts paused; press **Space** to begin.
 
 | key | action |
@@ -133,6 +192,8 @@ Data starts paused; press **Space** to begin.
 
 ### Quick start
 
+The quick start requires the ROS layer.
+
 **1. Set up the environment**
 
 Copy the setup file to your home directory and edit the two variables at the top:
@@ -147,7 +208,7 @@ source ~/kd_slam_setup.bash
 
 **2. Download a test sequence**
 
-> *Pre-computed tree bags and a short test sequence are available here: https://drive.google.com/drive/folders/1LgFxgOsP95HbQVAJUiexE2pzaCtMVfzA?usp=drive_link
+> *Pre-computed tree bags and a short test sequence are available here*: https://drive.google.com/drive/folders/1LgFxgOsP95HbQVAJUiexE2pzaCtMVfzA?usp=drive_link
 > Download and unpack so that `$KD_SLAM_TEST/vbr/bags/<seq>/` contains the tree bag
 > and `$KD_SLAM_TEST/vbr/gt_files/<seq>_gt.tum` contains the ground truth.
 
@@ -174,7 +235,7 @@ kd_slam \
 ```
 
 If you use a drive dataset (ciampino, campus) use kd_slam_icp_drive.conf
-Add `-V 2` to open the viewer.
+Add `-g` to open the viewer.
 Outputs: `<prefix>_map.boss` (map), `<prefix>.kf` (keyframes), `<prefix>.tum` (trajectory).
 
 **5. Run bundle adjustment**
@@ -208,9 +269,14 @@ traj_compare \
     $KD_SLAM_TEST/results/eval/
 ```
 
-Reports `ATE [R, T]` -- use the `T` (translation) metric; `R` is unreliable on
-straight sequences due to the rotation null space along the travel axis.
+Reports 
 
+ - `ATE_VBR [R, T]` -- mean error as used in the vbr benchmark
+ - `ATE_RMSE [R, T]` -- root mean square error (classical, used in many papers)
+
+For ATE use the `T` (translation) metric; `R` is unreliable on
+ straight sequences due to the rotation null space along the travel axis.
+ 
 > **Note on cure (`G`):** the map repair pass is functional but still under
 > development.  Use it for exploration, not for benchmarking.
 
@@ -288,6 +354,8 @@ SEQUENCES=spagna_train0 SLAM_CONF=$KD_SLAM_CONFIGS/kd_slam_icp_handheld.conf scr
 
 See `scripts/kd_runme.sh` for the full variant and phase list.
 
-Videos: https://youtu.be/c-sCCt9hMmI
-        https://youtu.be/aNCdJOZsXM0
-        https://youtu.be/ANkpNj99f3A
+Videos: 
+
+- https://youtu.be/c-sCCt9hMmI
+- https://youtu.be/aNCdJOZsXM0
+- https://youtu.be/ANkpNj99f3A
